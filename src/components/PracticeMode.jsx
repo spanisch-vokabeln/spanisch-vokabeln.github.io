@@ -261,22 +261,36 @@ function FlashcardMode({ words, onBack }) {
   );
 }
 
+// ─── Shared ───────────────────────────────────────────────────────────────────
+const DIR_LABELS = { es2de: 'ES → DE', de2es: 'DE → ES', mixed: 'Gemischt' };
+
 // ─── Multiple Choice Mode ────────────────────────────────────────────────────
 function MultipleChoiceMode({ words, onBack }) {
   const [deck]        = useState(() => shuffle(words));
+  const [started, setStarted] = useState(false);
   const [idx, setIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [feedback, setFb] = useState(null);
+  const [direction, setDirection] = useState('es2de');
+  const [cardDir, setCardDir] = useState('es2de');
   const mistakesRef = useRef([]);
   const total = deck.length;
   const card  = deck[idx];
 
+  useEffect(() => {
+    if (!started) return;
+    setCardDir(direction === 'mixed' ? (Math.random() < 0.5 ? 'es2de' : 'de2es') : direction);
+  }, [idx, started]);
+
   const options = useMemo(() => {
     if (!card) return [];
-    const correct = card.de;
-    const pool    = deck.filter(w => w.de !== correct).map(w => w.de);
+    const correct = cardDir === 'es2de' ? card.de : card.es;
+    const pool    = deck.filter(w => (cardDir === 'es2de' ? w.de : w.es) !== correct)
+                        .map(w => cardDir === 'es2de' ? w.de : w.es);
     return shuffle([correct, ...shuffle(pool).slice(0, 3)]);
-  }, [idx]);
+  }, [idx, cardDir]);
+
+  const restart = () => { setIdx(0); setScore(0); setFb(null); mistakesRef.current = []; setStarted(false); };
 
   const advance = (nextIdx) => {
     if (nextIdx >= total) setMistakes(mistakesRef.current);
@@ -286,13 +300,43 @@ function MultipleChoiceMode({ words, onBack }) {
 
   const pick = (opt) => {
     if (feedback) return;
-    const isCorrect = opt === card.de;
+    const correct = cardDir === 'es2de' ? card.de : card.es;
+    const isCorrect = opt === correct;
     if (isCorrect) setScore(s => s + 1);
     else mistakesRef.current.push(card);
     recordWord(card.es, isCorrect);
-    setFb({ picked: opt, correct: card.de, isCorrect });
+    setFb({ picked: opt, correct, isCorrect });
     if (isCorrect) setTimeout(() => advance(idx + 1), 1000);
   };
+
+  if (!started) {
+    return (
+      <div className="animate-slide-up space-y-6">
+        <div className="flex items-center justify-between">
+          <button onClick={onBack} className={BACK_BTN}>← Zurück</button>
+        </div>
+        <div className="card text-center space-y-5">
+          <h3 className="text-lg font-extrabold text-gray-800 dark:text-gray-100">Richtung wählen</h3>
+          <div className="flex flex-col gap-3">
+            {['es2de', 'de2es', 'mixed'].map(d => (
+              <button key={d} onClick={() => setDirection(d)}
+                className={`w-full py-3 rounded-xl font-bold text-sm border-2 transition-all ${
+                  direction === d
+                    ? 'border-amber-400 bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:border-amber-300'
+                }`}>
+                {DIR_LABELS[d]}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => { setCardDir(direction === 'mixed' ? (Math.random() < 0.5 ? 'es2de' : 'de2es') : direction); setStarted(true); }}
+            className="btn btn-primary w-full">
+            Starten →
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (idx >= total) {
     const pct = Math.round((score / total) * 100);
@@ -303,18 +347,25 @@ function MultipleChoiceMode({ words, onBack }) {
         <p className="text-4xl font-extrabold text-indigo-600">{pct}%</p>
         <p className="text-gray-500">{score} von {total} richtig</p>
         <div className="flex gap-3 justify-center flex-wrap">
-          <button onClick={() => { setIdx(0); setScore(0); setFb(null); mistakesRef.current = []; }} className="btn btn-primary">Nochmal</button>
+          <button onClick={restart} className="btn btn-primary">Nochmal</button>
           <button onClick={onBack} className="btn btn-outline">Zurück</button>
         </div>
       </div>
     );
   }
 
+  const question = cardDir === 'es2de' ? card.es : card.de;
+  const hint     = cardDir === 'es2de' ? 'Wie heißt das auf Deutsch?' : '¿Cómo se dice en español?';
+  const qLang    = cardDir === 'es2de' ? 'es-ES' : 'de-DE';
+
   return (
     <div className="animate-slide-up space-y-4">
       <div className="flex items-center justify-between">
         <button onClick={onBack} className={BACK_BTN}>← Zurück</button>
         <span className="text-sm text-gray-400">{idx + 1} / {total} · ✓ {score}</span>
+        <span className="text-xs font-bold px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400">
+          {DIR_LABELS[direction]}
+        </span>
       </div>
       <div className="w-full bg-gray-100 dark:bg-gray-800 h-2 rounded-full overflow-hidden">
         <div className="h-full bg-emerald-500 transition-all" style={{ width: `${(idx / total) * 100}%` }} />
@@ -323,15 +374,15 @@ function MultipleChoiceMode({ words, onBack }) {
       <div className="card text-center">
         {card.cat && <span className="text-xs text-emerald-500 font-bold uppercase tracking-wide block mb-1">{card.cat}</span>}
         <div className="flex items-center justify-center gap-2">
-          <p className="text-2xl font-extrabold text-gray-800 dark:text-gray-100">{card.es}</p>
+          <p className="text-2xl font-extrabold text-gray-800 dark:text-gray-100">{question}</p>
           {ttsSupported && (
-            <button onClick={() => speak(card.es, 'es-ES')}
+            <button onClick={() => speak(question, qLang)}
               className="text-xl text-gray-300 hover:text-emerald-500 transition-colors p-1 active:scale-90">
               🔊
             </button>
           )}
         </div>
-        <p className="text-xs text-gray-400 mt-1">Wie heißt das auf Deutsch?</p>
+        <p className="text-xs text-gray-400 mt-1">{hint}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -363,17 +414,26 @@ function MultipleChoiceMode({ words, onBack }) {
 // ─── Typing Mode ─────────────────────────────────────────────────────────────
 function TypingMode({ words, onBack }) {
   const [deck]       = useState(() => sortByDifficulty(words));
+  const [started, setStarted] = useState(false);
   const [idx, setIdx]     = useState(0);
   const [input, setInput] = useState('');
   const [feedback, setFb] = useState(null);
   const [score, setScore] = useState(0);
   const [direction, setDirection] = useState('es2de');
+  const [cardDir, setCardDir] = useState('es2de');
   const inputRef    = useRef(null);
   const mistakesRef = useRef([]);
   const total = deck.length;
   const card  = deck[idx];
 
-  useEffect(() => { if (!feedback && inputRef.current) inputRef.current.focus(); }, [idx, feedback]);
+  useEffect(() => {
+    if (!started) return;
+    setCardDir(direction === 'mixed' ? (Math.random() < 0.5 ? 'es2de' : 'de2es') : direction);
+  }, [idx, started]);
+
+  useEffect(() => { if (started && !feedback && inputRef.current) inputRef.current.focus(); }, [idx, feedback, started]);
+
+  const restart = () => { setIdx(0); setScore(0); setFb(null); setInput(''); mistakesRef.current = []; setStarted(false); };
 
   const advance = (nextIdx) => {
     if (nextIdx >= total) setMistakes(mistakesRef.current);
@@ -384,7 +444,7 @@ function TypingMode({ words, onBack }) {
 
   const submit = () => {
     if (!input.trim()) return;
-    const correct = direction === 'es2de' ? card.de : card.es;
+    const correct = cardDir === 'es2de' ? card.de : card.es;
     const result  = compareAnswers(input, correct);
     if (result.isCorrect) setScore(s => s + 1);
     else mistakesRef.current.push(card);
@@ -395,6 +455,35 @@ function TypingMode({ words, onBack }) {
     }
   };
 
+  if (!started) {
+    return (
+      <div className="animate-slide-up space-y-6">
+        <div className="flex items-center justify-between">
+          <button onClick={onBack} className={BACK_BTN}>← Zurück</button>
+        </div>
+        <div className="card text-center space-y-5">
+          <h3 className="text-lg font-extrabold text-gray-800 dark:text-gray-100">Richtung wählen</h3>
+          <div className="flex flex-col gap-3">
+            {['es2de', 'de2es', 'mixed'].map(d => (
+              <button key={d} onClick={() => setDirection(d)}
+                className={`w-full py-3 rounded-xl font-bold text-sm border-2 transition-all ${
+                  direction === d
+                    ? 'border-amber-400 bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:border-amber-300'
+                }`}>
+                {DIR_LABELS[d]}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => { setCardDir(direction === 'mixed' ? (Math.random() < 0.5 ? 'es2de' : 'de2es') : direction); setStarted(true); }}
+            className="btn btn-primary w-full">
+            Starten →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (idx >= total) {
     const pct = Math.round((score / total) * 100);
     return (
@@ -404,26 +493,25 @@ function TypingMode({ words, onBack }) {
         <p className="text-4xl font-extrabold text-indigo-600">{pct}%</p>
         <p className="text-gray-500">{score} von {total} richtig</p>
         <div className="flex gap-3 justify-center flex-wrap">
-          <button onClick={() => { setIdx(0); setScore(0); setFb(null); setInput(''); mistakesRef.current = []; }} className="btn btn-primary">Nochmal</button>
+          <button onClick={restart} className="btn btn-primary">Nochmal</button>
           <button onClick={onBack} className="btn btn-outline">Zurück</button>
         </div>
       </div>
     );
   }
 
-  const question = direction === 'es2de' ? card.es : card.de;
-  const qLang    = direction === 'es2de' ? 'Español' : 'Deutsch';
-  const aLang    = direction === 'es2de' ? 'Deutsch' : 'Español';
+  const question = cardDir === 'es2de' ? card.es : card.de;
+  const qLang    = cardDir === 'es2de' ? 'Español' : 'Deutsch';
+  const aLang    = cardDir === 'es2de' ? 'Deutsch' : 'Español';
 
   return (
     <div className="animate-slide-up space-y-4">
       <div className="flex items-center justify-between">
         <button onClick={onBack} className={BACK_BTN}>← Zurück</button>
         <span className="text-sm text-gray-400">{idx + 1} / {total} · ✓ {score}</span>
-        <button onClick={() => setDirection(d => d === 'es2de' ? 'de2es' : 'es2de')}
-          className="text-xs font-bold px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:border-indigo-300">
-          {direction === 'es2de' ? 'ES → DE' : 'DE → ES'}
-        </button>
+        <span className="text-xs font-bold px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400">
+          {DIR_LABELS[direction]}
+        </span>
       </div>
       <div className="w-full bg-gray-100 dark:bg-gray-800 h-2 rounded-full overflow-hidden">
         <div className="h-full bg-amber-400 transition-all" style={{ width: `${(idx / total) * 100}%` }} />
@@ -432,9 +520,9 @@ function TypingMode({ words, onBack }) {
       <div className="card text-center">
         <span className="text-xs text-amber-500 font-bold uppercase tracking-wide">{qLang}</span>
         <div className="flex items-center justify-center gap-2 mt-1">
-          <p className="text-2xl font-extrabold text-gray-800">{question}</p>
+          <p className="text-2xl font-extrabold text-gray-800 dark:text-gray-100">{question}</p>
           {ttsSupported && (
-            <button onClick={() => speak(question, direction === 'es2de' ? 'es-ES' : 'de-DE')}
+            <button onClick={() => speak(question, cardDir === 'es2de' ? 'es-ES' : 'de-DE')}
               className="text-xl text-gray-300 hover:text-amber-500 transition-colors p-1 active:scale-90">
               🔊
             </button>
