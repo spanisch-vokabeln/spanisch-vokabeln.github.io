@@ -4,11 +4,31 @@ import { vocabByGrade } from '../data/vocab';
 import { compareAnswers, hintMessage } from '../utils/textComparison';
 import { recordWord, sortByDifficulty, getMistakes, setMistakes } from '../utils/progress';
 import { speak, ttsSupported } from '../utils/speech';
+import { pickDistractors } from '../utils/distractors';
+import { AnswerInput, AccentKeys } from './AnswerInput';
 
 const BACK_BTN = 'px-4 py-2.5 bg-rose-100 dark:bg-rose-950 hover:bg-rose-200 dark:hover:bg-rose-900 active:scale-95 text-rose-700 dark:text-rose-300 font-semibold text-sm rounded-xl transition-all';
 
 function shuffle(arr) {
   return [...arr].map(v => ({ v, s: Math.random() })).sort((a, b) => a.s - b.s).map(({ v }) => v);
+}
+
+// Direction is fixed per card when the deck is built (no flash of the old direction)
+const resolveDir = (direction) =>
+  direction === 'mixed' ? (Math.random() < 0.5 ? 'es2de' : 'de2es') : direction;
+const withDirections = (words, direction) => words.map(w => ({ ...w, dir: resolveDir(direction) }));
+
+// All vocabulary, used when the selected words have too few distinct answers
+let allVocabCache = null;
+const allVocab = () =>
+  (allVocabCache ??= Object.values(vocabByGrade).flatMap(g => g.topics.flatMap(t => t.words)));
+
+// Timeout for auto-advancing that is cancelled on unmount
+function useAdvanceTimer() {
+  const ref = useRef(null);
+  const clear = () => { clearTimeout(ref.current); ref.current = null; };
+  useEffect(() => clear, []);
+  return { set: (fn, ms) => { clear(); ref.current = setTimeout(() => { ref.current = null; fn(); }, ms); }, clear };
 }
 
 // ─── Practice Menu ──────────────────────────────────────────────────────────
@@ -151,7 +171,7 @@ function ModeCard({ icon, title, desc, color, onClick, disabled }) {
 // ─── Flashcard Mode ──────────────────────────────────────────────────────────
 function FlashcardMode({ words, onBack }) {
   const [direction, setDirection] = useState('es2de');
-  const [deck]      = useState(() => sortByDifficulty(words));
+  const [deck, setDeck] = useState(() => sortByDifficulty(words));
   const [idx, setIdx]     = useState(0);
   const [revealed, setRevealed] = useState(false);
   const mistakesRef = useRef([]);
@@ -171,7 +191,7 @@ function FlashcardMode({ words, onBack }) {
     setIdx(i => i + 1);
   };
 
-  const restart = () => { mistakesRef.current = []; setIdx(0); setRevealed(false); };
+  const restart = () => { mistakesRef.current = []; setDeck(sortByDifficulty(words)); setIdx(0); setRevealed(false); };
 
   if (idx >= total) {
     const knownCount = total - mistakesRef.current.length;
@@ -266,33 +286,35 @@ const DIR_LABELS = { es2de: 'ES → DE', de2es: 'DE → ES', mixed: 'Gemischt' }
 
 // ─── Multiple Choice Mode ────────────────────────────────────────────────────
 function MultipleChoiceMode({ words, onBack }) {
-  const [deck]        = useState(() => shuffle(words));
+  const [deck, setDeck] = useState([]);
   const [started, setStarted] = useState(false);
   const [idx, setIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [feedback, setFb] = useState(null);
   const [direction, setDirection] = useState('es2de');
-  const [cardDir, setCardDir] = useState('es2de');
   const mistakesRef = useRef([]);
+  const timer = useAdvanceTimer();
   const total = deck.length;
   const card  = deck[idx];
-
-  useEffect(() => {
-    if (!started) return;
-    setCardDir(direction === 'mixed' ? (Math.random() < 0.5 ? 'es2de' : 'de2es') : direction);
-  }, [idx, started]);
+  const cardDir = card?.dir ?? direction;
 
   const options = useMemo(() => {
     if (!card) return [];
-    const correct = cardDir === 'es2de' ? card.de : card.es;
-    const pool    = deck.filter(w => (cardDir === 'es2de' ? w.de : w.es) !== correct)
-                        .map(w => cardDir === 'es2de' ? w.de : w.es);
-    return shuffle([correct, ...shuffle(pool).slice(0, 3)]);
-  }, [idx, cardDir]);
+    const correct = card.dir === 'es2de' ? card.de : card.es;
+    return shuffle([correct, ...pickDistractors(card, card.dir, deck, allVocab())]);
+  }, [card, deck]);
 
-  const restart = () => { setIdx(0); setScore(0); setFb(null); mistakesRef.current = []; setStarted(false); };
+  const start = () => {
+    setDeck(withDirections(shuffle(words), direction));
+    setIdx(0); setScore(0); setFb(null); mistakesRef.current = [];
+    setStarted(true);
+  };
+
+  // "Nochmal" goes back to the direction picker; starting again reshuffles
+  const restart = () => { timer.clear(); setIdx(0); setScore(0); setFb(null); mistakesRef.current = []; setStarted(false); };
 
   const advance = (nextIdx) => {
+    timer.clear();
     if (nextIdx >= total) setMistakes(mistakesRef.current);
     setFb(null);
     setIdx(nextIdx);
@@ -306,7 +328,7 @@ function MultipleChoiceMode({ words, onBack }) {
     else mistakesRef.current.push(card);
     recordWord(card.es, isCorrect);
     setFb({ picked: opt, correct, isCorrect });
-    if (isCorrect) setTimeout(() => advance(idx + 1), 1000);
+    if (isCorrect) timer.set(() => advance(idx + 1), 1000);
   };
 
   if (!started) {
@@ -329,8 +351,7 @@ function MultipleChoiceMode({ words, onBack }) {
               </button>
             ))}
           </div>
-          <button onClick={() => { setCardDir(direction === 'mixed' ? (Math.random() < 0.5 ? 'es2de' : 'de2es') : direction); setStarted(true); }}
-            className="btn btn-primary w-full">
+          <button onClick={start} className="btn btn-primary w-full">
             Starten →
           </button>
         </div>
@@ -413,29 +434,33 @@ function MultipleChoiceMode({ words, onBack }) {
 
 // ─── Typing Mode ─────────────────────────────────────────────────────────────
 function TypingMode({ words, onBack }) {
-  const [deck]       = useState(() => sortByDifficulty(words));
+  const [deck, setDeck] = useState([]);
   const [started, setStarted] = useState(false);
   const [idx, setIdx]     = useState(0);
   const [input, setInput] = useState('');
   const [feedback, setFb] = useState(null);
   const [score, setScore] = useState(0);
   const [direction, setDirection] = useState('es2de');
-  const [cardDir, setCardDir] = useState('es2de');
   const inputRef    = useRef(null);
   const mistakesRef = useRef([]);
+  const timer = useAdvanceTimer();
   const total = deck.length;
   const card  = deck[idx];
-
-  useEffect(() => {
-    if (!started) return;
-    setCardDir(direction === 'mixed' ? (Math.random() < 0.5 ? 'es2de' : 'de2es') : direction);
-  }, [idx, started]);
+  const cardDir = card?.dir ?? direction;
 
   useEffect(() => { if (started && !feedback && inputRef.current) inputRef.current.focus(); }, [idx, feedback, started]);
 
-  const restart = () => { setIdx(0); setScore(0); setFb(null); setInput(''); mistakesRef.current = []; setStarted(false); };
+  const start = () => {
+    setDeck(withDirections(sortByDifficulty(words), direction));
+    setIdx(0); setScore(0); setFb(null); setInput(''); mistakesRef.current = [];
+    setStarted(true);
+  };
+
+  // "Nochmal" goes back to the direction picker; starting again re-sorts by difficulty
+  const restart = () => { timer.clear(); setIdx(0); setScore(0); setFb(null); setInput(''); mistakesRef.current = []; setStarted(false); };
 
   const advance = (nextIdx) => {
+    timer.clear();
     if (nextIdx >= total) setMistakes(mistakesRef.current);
     setFb(null);
     setInput('');
@@ -451,7 +476,7 @@ function TypingMode({ words, onBack }) {
     recordWord(card.es, result.isCorrect);
     setFb({ ...result, correct });
     if (result.isCorrect && !result.hint) {
-      setTimeout(() => advance(idx + 1), 1200);
+      timer.set(() => advance(idx + 1), 1200);
     }
   };
 
@@ -475,8 +500,7 @@ function TypingMode({ words, onBack }) {
               </button>
             ))}
           </div>
-          <button onClick={() => { setCardDir(direction === 'mixed' ? (Math.random() < 0.5 ? 'es2de' : 'de2es') : direction); setStarted(true); }}
-            className="btn btn-primary w-full">
+          <button onClick={start} className="btn btn-primary w-full">
             Starten →
           </button>
         </div>
@@ -533,7 +557,7 @@ function TypingMode({ words, onBack }) {
 
       <div className="space-y-3">
         <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">{aLang}:</label>
-        <input ref={inputRef} type="text" value={input}
+        <AnswerInput ref={inputRef} value={input}
           onChange={e => setInput(e.target.value)}
           disabled={!!feedback}
           onKeyDown={e => { if (e.key === 'Enter' && !feedback) submit(); }}
@@ -542,14 +566,7 @@ function TypingMode({ words, onBack }) {
         />
         {!feedback && (
           <>
-            <div className="flex flex-wrap gap-1.5 justify-center">
-              {['á','é','í','ó','ú','ñ','ü','¡','¿'].map(c => (
-                <button key={c} onClick={() => setInput(v => v + c)}
-                  className="w-9 h-9 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 dark:text-gray-200 rounded-lg text-sm font-bold hover:bg-amber-50 dark:hover:bg-amber-950 hover:border-amber-300 transition-all">
-                  {c}
-                </button>
-              ))}
-            </div>
+            <AccentKeys inputRef={inputRef} value={input} onChange={setInput} />
             <button onClick={submit} disabled={!input.trim()} className="btn btn-primary w-full disabled:opacity-40">
               Prüfen
             </button>

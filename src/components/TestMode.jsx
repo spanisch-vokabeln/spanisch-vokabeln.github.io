@@ -6,6 +6,7 @@ import { compareAnswers, hintMessage } from '../utils/textComparison';
 import { recordWord, setMistakes } from '../utils/progress';
 import { speak, ttsSupported } from '../utils/speech';
 import { generatePrintTest, formatGradeLabel, openPrintWindow, POPUP_BLOCKED_MSG } from '../utils/printTest';
+import { AnswerInput, AccentKeys } from './AnswerInput';
 
 const BACK_BTN = 'px-4 py-2.5 bg-rose-100 dark:bg-rose-950 hover:bg-rose-200 dark:hover:bg-rose-900 active:scale-95 text-rose-700 dark:text-rose-300 font-semibold text-sm rounded-xl transition-all';
 
@@ -17,7 +18,8 @@ function shuffle(arr) {
 export default function TestMode({ selectedGrades, onBack }) {
   const [phase, setPhase]   = useState('setup');
   const [testWords, setTestWords] = useState([]);
-  const [config, setConfig] = useState({ count: 20, direction: 'mix' });
+  // count: 10 | 20 | 30 | 'all' – capped at the number of available words
+  const [config, setConfig] = useState({ count: 20, direction: 'mix', feedback: 'instant' });
   const [results, setResults] = useState(null);
   const [showFilter, setShowFilter] = useState(false);
   const [printError, setPrintError] = useState(false);
@@ -38,12 +40,14 @@ export default function TestMode({ selectedGrades, onBack }) {
     [allTopics, selectedTopics]);
 
   const maxWords = allWords.length;
+  const wordCount = config.count === 'all' ? maxWords : Math.min(config.count, maxWords);
+  const countOptions = [...[10, 20, 30].filter(n => n < maxWords), 'all'];
 
   const toggleTopic = (key) =>
     setSelectedTopics(prev => { const s = new Set(prev); s.has(key) ? s.delete(key) : s.add(key); return s; });
 
   const startTest = () => {
-    const picked = shuffle(allWords).slice(0, Math.min(config.count, maxWords));
+    const picked = shuffle(allWords).slice(0, wordCount);
     const prepared = picked.map(w => {
       let dir = config.direction;
       if (dir === 'mix') dir = Math.random() > 0.5 ? 'es2de' : 'de2es';
@@ -61,7 +65,7 @@ export default function TestMode({ selectedGrades, onBack }) {
   };
 
   if (phase === 'test') {
-    return <TestExam words={testWords} onFinish={handleFinish} onCancel={() => setPhase('setup')} />;
+    return <TestExam words={testWords} examMode={config.feedback === 'end'} onFinish={handleFinish} onCancel={() => setPhase('setup')} />;
   }
   if (phase === 'result') {
     return <TestResult results={results} totalWords={testWords.length} onBack={() => setPhase('setup')} onRetry={startTest} />;
@@ -81,14 +85,14 @@ export default function TestMode({ selectedGrades, onBack }) {
         <div>
           <label className="text-sm font-bold text-gray-700 dark:text-gray-200 block mb-3">Anzahl Wörter</label>
           <div className="flex flex-wrap gap-2">
-            {[10, 20, 30, maxWords].filter((v, i, a) => a.indexOf(v) === i).map(n => (
+            {countOptions.map(n => (
               <button key={n} onClick={() => setConfig(c => ({ ...c, count: n }))}
                 className={`px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all ${
-                  config.count === n
+                  wordCount === (n === 'all' ? maxWords : n)
                     ? 'border-amber-500 bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
                     : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:border-amber-300'
                 }`}>
-                {n === maxWords ? `Alle (${maxWords})` : n}
+                {n === 'all' ? `Alle (${maxWords})` : n}
               </button>
             ))}
           </div>
@@ -111,10 +115,27 @@ export default function TestMode({ selectedGrades, onBack }) {
           </div>
         </div>
 
+        {/* Rückmeldung */}
+        <div>
+          <label className="text-sm font-bold text-gray-700 dark:text-gray-200 block mb-3">Rückmeldung</label>
+          <div className="flex flex-wrap gap-2">
+            {[['instant', 'Nach jeder Antwort'], ['end', 'Erst am Ende (Prüfung)']].map(([val, label]) => (
+              <button key={val} onClick={() => setConfig(c => ({ ...c, feedback: val }))}
+                className={`px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all ${
+                  config.feedback === val
+                    ? 'border-amber-500 bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:border-amber-300'
+                }`}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Themenfilter */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-bold text-gray-700">
+            <label className="text-sm font-bold text-gray-700 dark:text-gray-200">
               Themen{' '}
               <span className="font-normal text-gray-400 text-xs">({selectedTopics.size}/{allTopics.length} ausgewählt)</span>
             </label>
@@ -159,13 +180,13 @@ export default function TestMode({ selectedGrades, onBack }) {
         <button onClick={startTest} disabled={maxWords === 0}
           className="btn w-full text-white text-base font-bold disabled:opacity-40"
           style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
-          Test starten → ({Math.min(config.count, maxWords)} Wörter)
+          Test starten → ({wordCount} Wörter)
         </button>
 
         <button
           disabled={maxWords === 0}
           onClick={() => {
-            const words = shuffle(allWords).slice(0, Math.min(config.count, maxWords)).map(w => {
+            const words = shuffle(allWords).slice(0, wordCount).map(w => {
               let dir = config.direction;
               if (dir === 'mix') dir = Math.random() > 0.5 ? 'es2de' : 'de2es';
               return { ...w, dir };
@@ -190,39 +211,56 @@ export default function TestMode({ selectedGrades, onBack }) {
 }
 
 // ─── Test Exam ───────────────────────────────────────────────────────────────
-function TestExam({ words, onFinish, onCancel }) {
+function TestExam({ words, examMode, onFinish, onCancel }) {
   const [idx, setIdx]     = useState(0);
   const [input, setInput] = useState('');
   const [feedback, setFb] = useState(null);
   const [answers, setAnswers] = useState([]);
   const [showExit, setShowExit] = useState(false);
   const inputRef = useRef(null);
+  const timerRef = useRef(null);
   const total = words.length;
   const word  = words[idx];
 
+  const clearTimer = () => { clearTimeout(timerRef.current); timerRef.current = null; };
+  useEffect(() => clearTimer, []);
+
   useEffect(() => { if (!feedback && inputRef.current) inputRef.current.focus(); }, [idx, feedback]);
+
+  const record = (fb) => [...answers, {
+    word, userInput: fb.userInput, correct: fb.correct,
+    isCorrect: fb.isCorrect, hasAccentWarning: fb.hasAccentWarning, hint: fb.hint ?? null,
+  }];
+
+  const goNext = (newAnswers) => {
+    clearTimer();
+    if (idx + 1 >= total) onFinish(newAnswers);
+    else { setAnswers(newAnswers); setFb(null); setInput(''); setIdx(i => i + 1); }
+  };
 
   const submit = () => {
     if (!input.trim()) return;
     const correct = word.dir === 'es2de' ? word.de : word.es;
-    const result  = compareAnswers(input, correct);
-    setFb({ ...result, correct, userInput: input });
-    if (result.isCorrect && !result.hint) {
-      const newAnswers = [...answers, { word, userInput: input, correct, isCorrect: true, hasAccentWarning: false, hint: null }];
-      setTimeout(() => {
-        if (idx + 1 >= total) onFinish(newAnswers);
-        else { setAnswers(newAnswers); setFb(null); setInput(''); setIdx(i => i + 1); }
-      }, 900);
+    const fb = { ...compareAnswers(input, correct), correct, userInput: input };
+    // Exam mode: no feedback until the result page
+    if (examMode) { goNext(record(fb)); return; }
+    setFb(fb);
+    if (fb.isCorrect && !fb.hint) {
+      const newAnswers = record(fb);
+      timerRef.current = setTimeout(() => goNext(newAnswers), 900);
     }
   };
 
-  const proceed = () => {
-    const newAnswers = [...answers, {
-      word, userInput: input, correct: feedback.correct,
-      isCorrect: feedback.isCorrect, hasAccentWarning: feedback.hasAccentWarning, hint: feedback.hint,
-    }];
-    if (idx + 1 >= total) onFinish(newAnswers);
-    else { setAnswers(newAnswers); setFb(null); setInput(''); setIdx(i => i + 1); }
+  const proceed = () => goNext(record(feedback));
+
+  // Opening the cancel dialog pauses a pending auto-advance
+  const openExit = () => {
+    if (timerRef.current) clearTimer();
+    setShowExit(true);
+  };
+  const closeExit = () => {
+    setShowExit(false);
+    if (feedback && feedback.isCorrect && !feedback.hint) proceed();
   };
 
   const question = word.dir === 'es2de' ? word.es : word.de;
@@ -233,7 +271,7 @@ function TestExam({ words, onFinish, onCancel }) {
   return (
     <div className="animate-slide-up space-y-4 relative">
       <div className="flex items-center justify-between">
-        <button onClick={() => setShowExit(true)} className={BACK_BTN}>← Abbrechen</button>
+        <button onClick={openExit} className={BACK_BTN}>← Abbrechen</button>
         <span className="text-sm font-bold text-gray-500">{idx + 1} / {total}</span>
         <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full font-bold">TEST</span>
       </div>
@@ -258,7 +296,7 @@ function TestExam({ words, onFinish, onCancel }) {
 
       <div className="space-y-3">
         <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">{aLabel}:</label>
-        <input ref={inputRef} type="text" value={input}
+        <AnswerInput ref={inputRef} value={input}
           onChange={e => setInput(e.target.value)}
           disabled={!!feedback}
           onKeyDown={e => { if (e.key === 'Enter' && !feedback) submit(); }}
@@ -267,14 +305,7 @@ function TestExam({ words, onFinish, onCancel }) {
         />
         {!feedback && (
           <>
-            <div className="flex flex-wrap gap-1.5 justify-center">
-              {['á','é','í','ó','ú','ñ','ü','¡','¿'].map(c => (
-                <button key={c} onClick={() => setInput(v => v + c)}
-                  className="w-9 h-9 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 dark:text-gray-200 rounded-lg text-sm font-bold hover:bg-amber-50 dark:hover:bg-amber-950 hover:border-amber-300 transition-all">
-                  {c}
-                </button>
-              ))}
-            </div>
+            <AccentKeys inputRef={inputRef} value={input} onChange={setInput} />
             <button onClick={submit} disabled={!input.trim()}
               className="btn w-full font-bold text-white disabled:opacity-40"
               style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
@@ -307,8 +338,8 @@ function TestExam({ words, onFinish, onCancel }) {
             <h3 className="text-xl font-bold dark:text-gray-100">Test abbrechen?</h3>
             <p className="text-gray-500 dark:text-gray-400 text-sm">Der aktuelle Fortschritt geht verloren.</p>
             <div className="flex gap-3 justify-center">
-              <button onClick={onCancel} className="btn bg-red-500 hover:bg-red-600 text-white">Ja, abbrechen</button>
-              <button onClick={() => setShowExit(false)} className="btn btn-outline">Weitermachen</button>
+              <button onClick={() => { clearTimer(); onCancel(); }} className="btn bg-red-500 hover:bg-red-600 text-white">Ja, abbrechen</button>
+              <button onClick={closeExit} className="btn btn-outline">Weitermachen</button>
             </div>
           </div>
         </div>

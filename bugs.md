@@ -19,7 +19,7 @@ Ergebnis des Audits vom 26.09.2026. Jeder Block ist so geschrieben, dass er **in
 | 2 | Zuordnungs-Modus hängt fest | 🔴 kritisch | – | ✅ |
 | 3 | Notenschlüssel & Druckansichten | 🔴 kritisch | – | ✅ |
 | 4 | Spiele (Arcade & Bilderquiz) | 🟠 Bug | – | ✅ |
-| 5 | Üben- & Test-Ablauf | 🟠 Bug | 1 | ⬜ |
+| 5 | Üben- & Test-Ablauf | 🟠 Bug | 1 | ✅ |
 | 6 | Lernstand, Fehlerwörter & Backup | 🟠 Bug | 2 | ⬜ |
 | 7 | Vokabeldaten & Klassen-Bezeichnungen | 🟠 Bug | 1 | ⬜ |
 | 8 | CSS, Schrift & Dunkelmodus | 🟠 Bug | – | ⬜ |
@@ -174,18 +174,20 @@ Wer 94 % hat, sieht im Schlüssel eine 2, bekommt aber eine 1.
 **Dateien:** `src/components/PracticeMode.jsx`, `src/components/TestMode.jsx`
 
 **Aufgaben**
-- [ ] **Test abbrechen nach richtiger Antwort:** In `TestExam.submit` wird ein `setTimeout` von 900 ms nie abgebrochen. Bricht man beim letzten Wort ab, springt die App trotzdem zur Ergebnisseite. Timer in einer Ref speichern und bei Abbruch/Unmount löschen. Dasselbe in `MultipleChoiceMode` (1000 ms) und `TypingMode` (1200 ms).
-- [ ] **Anzahl-Auswahl im Test:** Werte größer als `maxWords` ausblenden. Standardwert auf `min(20, maxWords)` setzen und bei Änderung der Themenauswahl nachführen.
-- [ ] **Gemischte Richtung** in MC/Eintippen: `cardDir` wird erst per `useEffect` nach dem Rendern gesetzt, dadurch erscheint die neue Karte kurz in der alten Richtung. Richtung pro Karte beim Mischen festlegen, wie in `TestMode.startTest`.
-- [ ] **„Nochmal“** in Karteikarten, Multiple Choice und Eintippen soll neu mischen bzw. neu nach Schwierigkeit sortieren.
-- [ ] **Multiple Choice:** Ablenker untereinander deduplizieren (gleiche Texte) und mindestens 3 verschiedene sicherstellen. `useMemo` mit vollständigen Abhängigkeiten versehen.
-- [ ] **Akzent-Knöpfe** (á é í ó ú ñ ü ¡ ¿):
-  - [ ] an der Cursorposition einfügen statt am Ende;
-  - [ ] danach den Fokus zurück ins Eingabefeld setzen, damit die Handy-Tastatur offen bleibt;
-  - [ ] Großbuchstaben ermöglichen, z. B. mit Shift oder einem Umschalter.
-- [ ] Eingabefeld mit `autoCapitalize="off" autoCorrect="off" spellCheck={false}` versehen, damit das Handy nicht automatisch korrigiert.
-- [ ] Im Test gibt es direkt nach jeder Antwort Feedback. Klären, ob gewollt; optional „Prüfungsmodus“ mit Auswertung erst am Ende.
-- [ ] Label „Themen“ im Test-Setup (`TestMode.jsx` ~Zeile 115) hat keine Dark-Variante.
+- [x] **Test abbrechen nach richtiger Antwort:** In `TestExam.submit` wird ein `setTimeout` von 900 ms nie abgebrochen. Bricht man beim letzten Wort ab, springt die App trotzdem zur Ergebnisseite. Timer in einer Ref speichern und bei Abbruch/Unmount löschen. Dasselbe in `MultipleChoiceMode` (1000 ms) und `TypingMode` (1200 ms).
+- [x] **Anzahl-Auswahl im Test:** Werte größer als `maxWords` ausblenden. Standardwert auf `min(20, maxWords)` setzen und bei Änderung der Themenauswahl nachführen.
+- [x] **Gemischte Richtung** in MC/Eintippen: `cardDir` wird erst per `useEffect` nach dem Rendern gesetzt, dadurch erscheint die neue Karte kurz in der alten Richtung. Richtung pro Karte beim Mischen festlegen, wie in `TestMode.startTest`.
+- [x] **„Nochmal“** in Karteikarten, Multiple Choice und Eintippen soll neu mischen bzw. neu nach Schwierigkeit sortieren.
+- [x] **Multiple Choice:** Ablenker untereinander deduplizieren (gleiche Texte) und mindestens 3 verschiedene sicherstellen. `useMemo` mit vollständigen Abhängigkeiten versehen.
+- [x] **Akzent-Knöpfe** (á é í ó ú ñ ü ¡ ¿):
+  - [x] an der Cursorposition einfügen statt am Ende;
+  - [x] danach den Fokus zurück ins Eingabefeld setzen, damit die Handy-Tastatur offen bleibt;
+  - [x] Großbuchstaben ermöglichen, z. B. mit Shift oder einem Umschalter.
+- [x] Eingabefeld mit `autoCapitalize="off" autoCorrect="off" spellCheck={false}` versehen, damit das Handy nicht automatisch korrigiert.
+- [x] Im Test gibt es direkt nach jeder Antwort Feedback. Klären, ob gewollt; optional „Prüfungsmodus“ mit Auswertung erst am Ende.
+- [x] Label „Themen“ im Test-Setup (`TestMode.jsx` ~Zeile 115) hat keine Dark-Variante.
+
+**Umgesetzt (26.09.2026):** Auto-Weiter-Timer liegen in Refs und werden bei Weiter, Abbruch und Unmount gelöscht (`useAdvanceTimer` in `PracticeMode.jsx`, `timerRef` in `TestExam`). Öffnet man im Test den Abbruch-Dialog während der 900-ms-Pause, wird der Timer angehalten; „Weitermachen“ springt dann zur nächsten Frage. Anzahl im Test: Auswahl `10 | 20 | 30 | 'all'`, die angezeigte Zahl ist immer `min(Auswahl, verfügbare Wörter)`; Werte ≥ `maxWords` werden ausgeblendet, damit folgt sie automatisch der Themenauswahl. MC/Eintippen legen die Richtung pro Karte beim Start fest (`withDirections`), „Nochmal“ führt zur Richtungswahl und mischt bzw. sortiert beim Start neu; Karteikarten sortieren bei „Nochmal“ neu. MC-Ablenker kommen aus `src/utils/distractors.js` (`pickDistractors`): eindeutige Texte, kein Wort mit gleichem Fragetext, Rückgriff auf alle Vokabeln, wenn die Auswahl zu wenige verschiedene Antworten hat. Neue Komponente `src/components/AnswerInput.jsx`: `AnswerInput` (ohne Autokorrektur/Großschreibung) und `AccentKeys` (Einfügen an der Cursorposition, Fokus bleibt im Feld, ⇧-Umschalter und Shift+Klick für Großbuchstaben) – genutzt in Eintippen und Test. **Prüfungsmodus:** Im Test-Setup gibt es „Rückmeldung: Nach jeder Antwort / Erst am Ende (Prüfung)“; Standard bleibt sofortiges Feedback. Label „Themen“ hat eine Dark-Variante. Im Browser geprüft (375 px, hell und dunkel): Abbruch nach richtiger letzter Antwort bleibt im Setup; 30 MC-Fragen gemischt (17/13) ohne falsche Richtung und ohne doppelte Optionen; Verlassen während der Pause springt nicht weiter; „ao“ + ñ an Position 1 → „año“ mit Fokus im Feld.
 
 ---
 
@@ -320,3 +322,7 @@ _(Hier tragen Sitzungen Funde außerhalb ihres Blocks ein.)_
 - **Block 2 → Block 6:** Im Zuordnungs-Modus werden Fehlerwörter wie in den anderen Modi erst am Rundenende gespeichert und die Liste dabei überschrieben (bei 0 Fehlern gelöscht). Das Zusammenführen bzw. Speichern bei Abbruch gehört zu Block 6.
 - **Block 3 → Block 7:** Die Druck-Kopfzeile nutzt jetzt `vocabByGrade[g].label`. Solange 7n ebenfalls „Klasse 7“ heißt, steht bei 7 + 7n dort „Klasse 7 + 7“. Das behebt die Umbenennung in Block 7 automatisch.
 - **Block 4 → Block 10:** `GamesHub.jsx` hat jetzt eine eigene Fisher-Yates-Funktion `shuffled()`; beim Zusammenführen in `src/utils/shuffle.js` mitnehmen (ebenso die `shuffle`-Funktion im Bilderquiz).
+- **Block 5 → Block 10:** `pickDistractors` gibt es jetzt zweimal: `src/utils/distractors.js` (Üben) und eine gleichartige Funktion in `GamesHub.jsx` (Block 4). Beim Aufräumen GamesHub auf die Util umstellen.
+- **Block 5 → Block 1-Notiz:** Der Artikel-/Akzent-Hinweis verlangt weiterhin „Weiter“. Bewusst so gelassen, damit man den Hinweis lesen kann; im Prüfungsmodus entfällt der Klick ohnehin.
+- **Block 5 → Block 6:** `sortByDifficulty` in `progress.js` nutzt einen Zufallsanteil im Vergleicher (inkonsistente Sortierung). Besser erst mischen, dann stabil nach Schwierigkeit sortieren.
+- **Block 5 → Block 8:** „TEST“-Badge in `TestExam` hat weiterhin keine Dark-Variante (steht schon in Block 8).
