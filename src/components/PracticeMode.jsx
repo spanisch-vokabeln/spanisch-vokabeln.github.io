@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import FloatingBack from './FloatingBack';
 import { vocabByGrade } from '../data/vocab';
-import { compareAnswers } from '../utils/textComparison';
+import { compareAnswers, hintMessage } from '../utils/textComparison';
 import { recordWord, sortByDifficulty, getMistakes, setMistakes } from '../utils/progress';
 import { speak, ttsSupported } from '../utils/speech';
 
@@ -450,7 +450,7 @@ function TypingMode({ words, onBack }) {
     else mistakesRef.current.push(card);
     recordWord(card.es, result.isCorrect);
     setFb({ ...result, correct });
-    if (result.isCorrect && !result.hasAccentWarning) {
+    if (result.isCorrect && !result.hint) {
       setTimeout(() => advance(idx + 1), 1200);
     }
   };
@@ -558,15 +558,15 @@ function TypingMode({ words, onBack }) {
         {feedback && (
           <div className={`p-4 rounded-xl text-center font-semibold ${
             feedback.isCorrect
-              ? feedback.hasAccentWarning ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' : 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+              ? feedback.hint ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' : 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
               : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
           }`}>
             {feedback.isCorrect
-              ? feedback.hasAccentWarning ? `Richtig! (Akzente: ${feedback.correct})` : '¡Correcto!'
+              ? feedback.hint ? `Richtig! (${hintMessage(feedback.hint)}: ${feedback.correct})` : '¡Correcto!'
               : `Falsch. Richtig: ${feedback.correct}`}
           </div>
         )}
-        {feedback && (!feedback.isCorrect || feedback.hasAccentWarning) && (
+        {feedback && (!feedback.isCorrect || feedback.hint) && (
           <button onClick={() => advance(idx + 1)} className="btn btn-secondary w-full">Weiter →</button>
         )}
       </div>

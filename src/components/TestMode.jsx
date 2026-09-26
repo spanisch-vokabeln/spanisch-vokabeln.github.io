@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import FloatingBack from './FloatingBack';
 import { vocabByGrade, getGrade } from '../data/vocab';
-import { compareAnswers } from '../utils/textComparison';
+import { compareAnswers, hintMessage } from '../utils/textComparison';
 import { recordWord, setMistakes } from '../utils/progress';
 import { speak, ttsSupported } from '../utils/speech';
 import { generatePrintTest } from '../utils/printTest';
@@ -203,8 +203,8 @@ function TestExam({ words, onFinish, onCancel }) {
     const correct = word.dir === 'es2de' ? word.de : word.es;
     const result  = compareAnswers(input, correct);
     setFb({ ...result, correct, userInput: input });
-    if (result.isCorrect && !result.hasAccentWarning) {
-      const newAnswers = [...answers, { word, userInput: input, correct, isCorrect: true, hasAccentWarning: false }];
+    if (result.isCorrect && !result.hint) {
+      const newAnswers = [...answers, { word, userInput: input, correct, isCorrect: true, hasAccentWarning: false, hint: null }];
       setTimeout(() => {
         if (idx + 1 >= total) onFinish(newAnswers);
         else { setAnswers(newAnswers); setFb(null); setInput(''); setIdx(i => i + 1); }
@@ -215,7 +215,7 @@ function TestExam({ words, onFinish, onCancel }) {
   const proceed = () => {
     const newAnswers = [...answers, {
       word, userInput: input, correct: feedback.correct,
-      isCorrect: feedback.isCorrect, hasAccentWarning: feedback.hasAccentWarning,
+      isCorrect: feedback.isCorrect, hasAccentWarning: feedback.hasAccentWarning, hint: feedback.hint,
     }];
     if (idx + 1 >= total) onFinish(newAnswers);
     else { setAnswers(newAnswers); setFb(null); setInput(''); setIdx(i => i + 1); }
@@ -282,14 +282,14 @@ function TestExam({ words, onFinish, onCancel }) {
           <>
             <div className={`p-4 rounded-xl text-center font-semibold ${
               feedback.isCorrect
-                ? feedback.hasAccentWarning ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' : 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                ? feedback.hint ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' : 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
                 : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
             }`}>
               {feedback.isCorrect
-                ? feedback.hasAccentWarning ? `Richtig! (Akzent beachten: ${feedback.correct})` : '¡Correcto! ✓'
+                ? feedback.hint ? `Richtig! (${hintMessage(feedback.hint)}: ${feedback.correct})` : '¡Correcto! ✓'
                 : `Falsch. Richtig: „${feedback.correct}"`}
             </div>
-            {(!feedback.isCorrect || feedback.hasAccentWarning) && (
+            {(!feedback.isCorrect || feedback.hint) && (
               <button onClick={proceed} className="btn btn-secondary w-full">Weiter →</button>
             )}
           </>
@@ -321,6 +321,7 @@ function TestResult({ results, totalWords, onBack, onRetry }) {
   const grade    = getGrade(pct);
   const mistakes = results.filter(r => !r.isCorrect);
   const accents  = results.filter(r => r.hasAccentWarning);
+  const articles = results.filter(r => r.hint === 'article' || r.hint === 'article-accent');
 
   const noteColor = grade.note <= 2 ? '#059669' : grade.note <= 3 ? '#d97706' : grade.note <= 4 ? '#ea580c' : '#dc2626';
 
@@ -338,6 +339,9 @@ function TestResult({ results, totalWords, onBack, onRetry }) {
         <p className="text-gray-500 dark:text-gray-400">{correct} von {totalWords} richtig</p>
         {accents.length > 0 && (
           <p className="text-amber-600 text-sm font-medium">{accents.length} Antwort(en) mit Akzentfehler (als richtig gewertet)</p>
+        )}
+        {articles.length > 0 && (
+          <p className="text-amber-600 text-sm font-medium">{articles.length} Antwort(en) ohne Artikel (als richtig gewertet)</p>
         )}
         <div className="grid grid-cols-6 gap-1 mt-2">
           {[1,2,3,4,5,6].map(n => (
