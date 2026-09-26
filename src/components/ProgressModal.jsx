@@ -50,7 +50,7 @@ export default function ProgressModal({ onClose }) {
         </div>
 
         {/* Explanation */}
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 text-sm text-amber-800 space-y-1.5">
+        <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-xl p-3.5 text-sm text-amber-800 dark:text-amber-200 space-y-1.5">
           <p className="font-semibold">⚠️ Dein Fortschritt ist nur auf diesem Gerät gespeichert.</p>
           <p>Wenn du den Browser-Verlauf löschst oder ein anderes Gerät benutzt, ist er weg.</p>
           <p>👉 Lade ihn als Datei herunter und sende sie dir z.B. per Mail oder speichere sie in deiner Cloud.</p>
@@ -81,7 +81,7 @@ export default function ProgressModal({ onClose }) {
 
         {/* Import */}
         <div className="space-y-2">
-          <p className="text-xs text-gray-500 text-center">Gespeicherten Stand wiederherstellen:</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 text-center">Gespeicherten Stand wiederherstellen:</p>
           <input
             ref={fileRef}
             type="file"
@@ -90,7 +90,7 @@ export default function ProgressModal({ onClose }) {
             onChange={handleFile}
           />
           {imported ? (
-            <div className="w-full btn bg-emerald-100 text-emerald-700 text-sm text-center">
+            <div className="w-full btn bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-sm text-center">
               ✓ Lernstand geladen – Seite wird neu geladen…
             </div>
           ) : (
@@ -105,17 +105,17 @@ export default function ProgressModal({ onClose }) {
         </div>
 
         {/* Reset */}
-        <div className="pt-1 border-t border-gray-100">
+        <div className="pt-1 border-t border-gray-100 dark:border-gray-800">
           {confirmReset ? (
             <div className="flex gap-2">
-              <p className="text-xs text-gray-500 flex-1">Lernstand und Fehlerwörter löschen? Spielrekorde bleiben.</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 flex-1">Lernstand und Fehlerwörter löschen? Spielrekorde bleiben.</p>
               <button onClick={handleReset} className="text-xs text-red-500 font-semibold hover:underline">Ja, löschen</button>
               <button onClick={() => setConfirmReset(false)} className="text-xs text-gray-400 hover:underline">Abbrechen</button>
             </div>
           ) : (
             <button
               onClick={() => setConfirmReset(true)}
-              className="text-xs text-gray-300 hover:text-red-400 transition-colors w-full text-center"
+              className="text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors w-full text-center"
             >
               Lernstand zurücksetzen (Spielrekorde bleiben erhalten)
             </button>

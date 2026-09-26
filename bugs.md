@@ -22,7 +22,7 @@ Ergebnis des Audits vom 26.09.2026. Jeder Block ist so geschrieben, dass er **in
 | 5 | Üben- & Test-Ablauf | 🟠 Bug | 1 | ✅ |
 | 6 | Lernstand, Fehlerwörter & Backup | 🟠 Bug | 2 | ✅ |
 | 7 | Vokabeldaten & Klassen-Bezeichnungen | 🟠 Bug | 1 | ✅ |
-| 8 | CSS, Schrift & Dunkelmodus | 🟠 Bug | – | ⬜ |
+| 8 | CSS, Schrift & Dunkelmodus | 🟠 Bug | – | ✅ |
 | 9 | Navigation & Bedienbarkeit | 🟡 UX | 5, 8 | ⬜ |
 | 10 | PWA, Aufräumen & Abhängigkeiten | ⚪ Technik | – | ⬜ |
 
@@ -254,14 +254,14 @@ Wer 94 % hat, sieht im Schlüssel eine 2, bekommt aber eine 1.
 **Datei:** `src/index.css` (plus einzelne Komponenten)
 
 **Aufgaben**
-- [ ] **Tailwind-Klassen werden überschrieben:** `.card`, `.btn`, `.btn-*` stehen außerhalb eines CSS-Layers. In Tailwind v4 schlagen sie deshalb alle Utility-Klassen. Im Browser gemessen:
+- [x] **Tailwind-Klassen werden überschrieben:** `.card`, `.btn`, `.btn-*` stehen außerhalb eines CSS-Layers. In Tailwind v4 schlagen sie deshalb alle Utility-Klassen. Im Browser gemessen:
   - Die aktive Fehlerwörter-Karte (`border-rose-400 bg-rose-50`) bleibt grau.
   - `py-4` auf `.btn` wirkt nicht.
   - Die Startseiten-Karten brauchen deshalb Inline-`padding`.
 
   Lösung: die eigenen Klassen in `@layer components { … }` verschieben. Danach **alle Seiten visuell prüfen**, weil sich Abstände ändern können, und die Inline-Workarounds entfernen (z. B. `padding: '0.875rem'` in `HomePage.jsx` ActionCard).
-- [ ] **Schrift „Inter“ wird nie geladen:** Der Build warnt „@import must precede all other statements“. Das `@import url(...)` für Google Fonts an den Dateianfang verschieben, oder besser per `<link>` in `index.html` laden. Alternativ die Schrift selbst hosten (offline-fähig, DSGVO).
-- [ ] **Dark-Mode-Lücken ergänzen:**
+- [x] **Schrift „Inter“ wird nie geladen:** Der Build warnt „@import must precede all other statements“. Das `@import url(...)` für Google Fonts an den Dateianfang verschieben, oder besser per `<link>` in `index.html` laden. Alternativ die Schrift selbst hosten (offline-fähig, DSGVO).
+- [x] **Dark-Mode-Lücken ergänzen:**
   - Warnkasten in `ProgressModal.jsx` (`bg-amber-50 … text-amber-800`)
   - Fehlerwörter-Karte in `PracticeMode.jsx` (`bg-rose-50`, `bg-rose-100`)
   - Trennlinien `bg-gray-100` / `border-gray-100` in `VocabBrowser.jsx`, `PracticeMode.jsx` und `TestMode.jsx`
@@ -269,10 +269,12 @@ Wer 94 % hat, sieht im Schlüssel eine 2, bekommt aber eine 1.
   - Antwortkarten im Bilderquiz (`border-gray-100`, `bg-emerald-50`, `bg-red-50`)
   - Karteikarten-Texte `text-gray-300` / `text-indigo-600`
   - „TEST“-Badge im Test
-- [ ] `theme-color` in `index.html` im Dunkelmodus anpassen (Statusleiste am Handy).
-- [ ] Schwache Kontraste prüfen, z. B. `text-gray-300` auf Weiß bei „Tippen zum Aufdecken“ und bei den 🔊-Knöpfen.
+- [x] `theme-color` in `index.html` im Dunkelmodus anpassen (Statusleiste am Handy).
+- [x] Schwache Kontraste prüfen, z. B. `text-gray-300` auf Weiß bei „Tippen zum Aufdecken“ und bei den 🔊-Knöpfen.
 
 **Fertig, wenn** `npm run build` keine CSS-Warnung mehr zeigt und alle Ansichten hell und dunkel sauber aussehen.
+
+**Umgesetzt (26.09.2026):** `.btn`, `.btn-*` und `.card` (inkl. Dark-Varianten) stehen jetzt in `@layer components`; Utilities wie `py-4`, `border-0`, `bg-rose-50` greifen wieder. Inline-`padding` der ActionCard ist durch `p-3.5` ersetzt. Die Bilderquiz-Karten hatten `bg-white` und `bg-emerald-50` gleichzeitig; der Hintergrund steckt jetzt nur noch im jeweiligen Zustand. **Schrift:** Inter wird selbst gehostet (`@fontsource-variable/inter`, nur Latin-Subset, 48 kB, im Service-Worker-Precache, offline-fähig, keine Google-Anfrage); die Google-Fonts-Cache-Regel in `vite.config.js` ist entfernt. **Dark Mode:** alle genannten Stellen ergänzt, dazu Richtig/Falsch-Optionen im Arcade-Spiel, Erfolgsmeldung beim Import, diverse `text-indigo-600`/`text-gray-500`. **theme-color:** wird im Inline-Skript von `index.html` und in `darkMode.jsx` passend gesetzt (`#4f46e5` hell / `#0d0d1a` dunkel) und folgt dem Umschalter. **Kontraste:** `text-gray-300` → `text-gray-400` (hell) / `text-gray-500` (dunkel) bei „Tippen zum Aufdecken“, 🔊-Knöpfen und „Lernstand zurücksetzen“. Test-Feedback nutzt jetzt das richtige schließende Anführungszeichen („…“). Im Browser geprüft (375 px, hell und dunkel): Startseite, Üben mit aktiver Fehlerwörter-Karte, Karteikarte, Test mit Feedback, Bilderquiz- und Racha-Feedback, Lernstand-Dialog.
 
 ---
 
@@ -323,7 +325,7 @@ Wer 94 % hat, sieht im Schlüssel eine 2, bekommt aber eine 1.
 _(Hier tragen Sitzungen Funde außerhalb ihres Blocks ein.)_
 
 - **Block 1 → Block 7 (erledigt):** Bei „etw. / a alguien“-Einträgen werden jetzt beide Varianten erzeugt („conocer algo“, „conocer a alguien“). Bei deutschen Einträgen wie `der / die Flüchtling/-in` erzeugt die Endungsregel auch „Flüchtlingin“ (harmlos, aber die Daten könnten `Flüchtling` ohne `/-in` schreiben).
-- **Block 1 → Block 8:** `npm run build` zeigt weiterhin die CSS-Warnung „@import must precede all other statements“ (war schon vorher da, gehört zu Block 8).
+- **Block 1 → Block 8 (erledigt):** `npm run build` zeigt weiterhin die CSS-Warnung „@import must precede all other statements“ (war schon vorher da, gehört zu Block 8).
 - **Block 1 → Block 5:** Der Artikel-Hinweis verhindert wie der Akzent-Hinweis das automatische Weiterspringen (Nutzer muss „Weiter“ tippen). Falls das zu viele Klicks sind, in Block 5 überdenken.
 - **Block 2 → Block 6:** Im Zuordnungs-Modus werden Fehlerwörter wie in den anderen Modi erst am Rundenende gespeichert und die Liste dabei überschrieben (bei 0 Fehlern gelöscht). Das Zusammenführen bzw. Speichern bei Abbruch gehört zu Block 6.
 - **Block 3 → Block 7 (erledigt):** Die Druck-Kopfzeile nutzt jetzt `vocabByGrade[g].label`. Solange 7n ebenfalls „Klasse 7“ heißt, steht bei 7 + 7n dort „Klasse 7 + 7“. Das behebt die Umbenennung in Block 7 automatisch.
@@ -331,6 +333,6 @@ _(Hier tragen Sitzungen Funde außerhalb ihres Blocks ein.)_
 - **Block 5 → Block 10:** `pickDistractors` gibt es jetzt zweimal: `src/utils/distractors.js` (Üben) und eine gleichartige Funktion in `GamesHub.jsx` (Block 4). Beim Aufräumen GamesHub auf die Util umstellen.
 - **Block 5 → Block 1-Notiz:** Der Artikel-/Akzent-Hinweis verlangt weiterhin „Weiter“. Bewusst so gelassen, damit man den Hinweis lesen kann; im Prüfungsmodus entfällt der Klick ohnehin.
 - **Block 5 → Block 6:** `sortByDifficulty` in `progress.js` nutzt einen Zufallsanteil im Vergleicher (inkonsistente Sortierung). Besser erst mischen, dann stabil nach Schwierigkeit sortieren.
-- **Block 5 → Block 8:** „TEST“-Badge in `TestExam` hat weiterhin keine Dark-Variante (steht schon in Block 8).
+- **Block 5 → Block 8 (erledigt):** „TEST“-Badge in `TestExam` hat weiterhin keine Dark-Variante (steht schon in Block 8).
 - **Block 6 → Block 7 (bewusst ignoriert, laut Nutzer ist der Lernstand egal):** Der Lernstand hängt jetzt am Paar `es|de`. Wer in Block 7 deutsche Übersetzungen ändert (z. B. „gut (Adverb)“), trennt damit den bisherigen Lernstand dieses Wortes ab. Falls das stört: in `migrateProgress()` eine kleine Umbenennungstabelle alt → neu ergänzen und `PROGRESS_VERSION` erhöhen.
 - **Block 6 → Block 10:** `src/utils/darkMode.js` (tote Datei) greift noch ungeschützt auf `localStorage` zu; wird beim Löschen in Block 10 erledigt.

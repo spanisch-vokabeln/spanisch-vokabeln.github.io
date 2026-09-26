@@ -11,6 +11,14 @@ export function DarkProvider({ children }) {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    // Phone status bar colour follows the app theme
+    let meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.name = 'theme-color';
+      document.head.appendChild(meta);
+    }
+    meta.content = dark ? '#0d0d1a' : '#4f46e5';
     storageSet('theme', dark ? 'dark' : 'light');
   }, [dark]);
 

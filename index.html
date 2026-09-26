@@ -7,6 +7,8 @@
         try{t=localStorage.getItem('theme');}catch(e){}
         var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;
         if(d)document.documentElement.setAttribute('data-theme','dark');
+        var m=document.createElement('meta');m.name='theme-color';m.content=d?'#0d0d1a':'#4f46e5';
+        document.head.appendChild(m);
       })();
     </script>
     <meta charset="UTF-8" />
@@ -14,7 +16,6 @@
     <title>Español Vokabeln – Klasse 7–12</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/icon.svg" />
-    <meta name="theme-color" content="#4f46e5" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Español" />

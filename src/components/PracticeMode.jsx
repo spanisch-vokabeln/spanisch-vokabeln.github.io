@@ -87,7 +87,7 @@ export default function PracticeMode({ selectedGrades, onBack }) {
       {!mistakeMode && (
         <div className="card">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-gray-500 dark:text-gray-400">
               <span className="font-bold text-gray-700 dark:text-gray-200">{filteredWords.length}</span> Wörter ·{' '}
               <span className="font-bold text-gray-700 dark:text-gray-200">{selectedTopics.size}/{allTopics.length}</span> Themen
             </span>
@@ -97,10 +97,10 @@ export default function PracticeMode({ selectedGrades, onBack }) {
             </button>
           </div>
           {showFilter && (
-            <div className="mt-3 pt-3 border-t border-gray-100 space-y-0.5">
+            <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 space-y-0.5">
               <div className="flex gap-3 mb-2">
                 <button onClick={() => setSelectedTopics(new Set(allTopics.map(t => t.key)))}
-                  className="text-xs font-semibold text-indigo-600 hover:underline">Alle</button>
+                  className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Alle</button>
                 <button onClick={() => setSelectedTopics(new Set())}
                   className="text-xs font-semibold text-gray-400 hover:underline">Keine</button>
               </div>
@@ -121,22 +121,22 @@ export default function PracticeMode({ selectedGrades, onBack }) {
       {savedMistakes.length > 0 && (
         <button onClick={() => setMistakeMode(v => !v)}
           className={`w-full card text-left flex items-center gap-3 cursor-pointer active:scale-95 border-2 transition-all ${
-            mistakeMode ? 'border-rose-400 bg-rose-50' : 'border-rose-200 hover:border-rose-300 hover:shadow-md'
+            mistakeMode ? 'border-rose-400 bg-rose-50 dark:border-rose-700 dark:bg-rose-950' : 'border-rose-200 dark:border-rose-900 hover:border-rose-300 dark:hover:border-rose-700 hover:shadow-md'
           }`}>
-          <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center text-xl flex-shrink-0">🔁</div>
+          <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-900 flex items-center justify-center text-xl flex-shrink-0">🔁</div>
           <div className="flex-1">
             <div className="font-bold text-gray-800 dark:text-gray-100 text-sm">Fehlerwörter üben</div>
             <div className="text-xs text-gray-500 dark:text-gray-400">{savedMistakes.length === 1 ? '1 gespeichertes Wort' : `${savedMistakes.length} gespeicherte Wörter`} · richtig beantwortete werden entfernt</div>
           </div>
           {mistakeMode
-            ? <span className="text-xs font-bold text-rose-600 bg-rose-100 px-2 py-1 rounded-lg">Aktiv ✓</span>
-            : <span className="text-xs text-rose-400 font-medium">Tippen →</span>}
+            ? <span className="text-xs font-bold text-rose-600 dark:text-rose-300 bg-rose-100 dark:bg-rose-900 px-2 py-1 rounded-lg">Aktiv ✓</span>
+            : <span className="text-xs text-rose-500 dark:text-rose-400 font-medium">Tippen →</span>}
         </button>
       )}
       {mistakeMode && (
         <p className="text-xs text-center text-gray-400">
           Fehlerwörter-Modus aktiv ·{' '}
-          <button onClick={() => setMistakeMode(false)} className="text-indigo-600 underline">Zurück zu allen Wörtern</button>
+          <button onClick={() => setMistakeMode(false)} className="text-indigo-600 dark:text-indigo-400 underline">Zurück zu allen Wörtern</button>
         </p>
       )}
 
@@ -208,11 +208,11 @@ function FlashcardMode({ words, fromMistakes, onBack }) {
         <div className="flex justify-center gap-8">
           <div>
             <div className="text-2xl font-extrabold text-emerald-600">{knownCount}</div>
-            <div className="text-xs text-gray-500">Gewusst</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">Gewusst</div>
           </div>
           <div>
             <div className="text-2xl font-extrabold text-rose-500">{mistakesRef.current.length}</div>
-            <div className="text-xs text-gray-500">Noch nicht</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">Noch nicht</div>
           </div>
         </div>
         {mistakesRef.current.length > 0 && (
@@ -251,21 +251,21 @@ function FlashcardMode({ words, fromMistakes, onBack }) {
           <span className="text-2xl sm:text-3xl font-extrabold text-gray-800 dark:text-gray-100">{front}</span>
           {ttsSupported && (
             <button onClick={e => { e.stopPropagation(); speak(front, frontLang); }}
-              className="text-xl text-gray-300 hover:text-indigo-500 transition-colors p-1 active:scale-90">
+              className="text-xl text-gray-400 dark:text-gray-500 hover:text-indigo-500 transition-colors p-1 active:scale-90">
               🔊
             </button>
           )}
         </div>
         {card.cat && <span className="text-xs text-indigo-400 font-medium">{card.cat}</span>}
         {revealed ? (
-          <div className="border-t border-gray-100 pt-4 w-full">
+          <div className="border-t border-gray-100 dark:border-gray-700 pt-4 w-full">
             <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
               {direction === 'es2de' ? 'Deutsch' : 'Español'}
             </span>
-            <p className="text-xl font-bold text-indigo-600 mt-1">{back}</p>
+            <p className="text-xl font-bold text-indigo-600 dark:text-indigo-300 mt-1">{back}</p>
           </div>
         ) : (
-          <p className="text-gray-300 text-sm">Tippen zum Aufdecken</p>
+          <p className="text-gray-400 dark:text-gray-500 text-sm">Tippen zum Aufdecken</p>
         )}
       </div>
 
@@ -371,8 +371,8 @@ function MultipleChoiceMode({ words, fromMistakes, onBack }) {
       <div className="card animate-slide-up text-center space-y-4">
         <div className="text-5xl">{pct >= 80 ? '🏆' : pct >= 50 ? '👍' : '📚'}</div>
         <h3 className="text-2xl font-extrabold">Fertig!</h3>
-        <p className="text-4xl font-extrabold text-indigo-600">{pct}%</p>
-        <p className="text-gray-500">{score} von {total} richtig</p>
+        <p className="text-4xl font-extrabold text-indigo-600 dark:text-indigo-400">{pct}%</p>
+        <p className="text-gray-500 dark:text-gray-400">{score} von {total} richtig</p>
         <div className="flex gap-3 justify-center flex-wrap">
           <button onClick={restart} className="btn btn-primary">Nochmal</button>
           <button onClick={onBack} className="btn btn-outline">Zurück</button>
@@ -404,7 +404,7 @@ function MultipleChoiceMode({ words, fromMistakes, onBack }) {
           <p className="text-2xl font-extrabold text-gray-800 dark:text-gray-100">{question}</p>
           {ttsSupported && (
             <button onClick={() => speak(question, qLang)}
-              className="text-xl text-gray-300 hover:text-emerald-500 transition-colors p-1 active:scale-90">
+              className="text-xl text-gray-400 dark:text-gray-500 hover:text-emerald-500 transition-colors p-1 active:scale-90">
               🔊
             </button>
           )}
@@ -519,8 +519,8 @@ function TypingMode({ words, fromMistakes, onBack }) {
       <div className="card animate-slide-up text-center space-y-4">
         <div className="text-5xl">{pct >= 80 ? '🏆' : '📚'}</div>
         <h3 className="text-2xl font-extrabold">Fertig!</h3>
-        <p className="text-4xl font-extrabold text-indigo-600">{pct}%</p>
-        <p className="text-gray-500">{score} von {total} richtig</p>
+        <p className="text-4xl font-extrabold text-indigo-600 dark:text-indigo-400">{pct}%</p>
+        <p className="text-gray-500 dark:text-gray-400">{score} von {total} richtig</p>
         <div className="flex gap-3 justify-center flex-wrap">
           <button onClick={restart} className="btn btn-primary">Nochmal</button>
           <button onClick={onBack} className="btn btn-outline">Zurück</button>
@@ -552,7 +552,7 @@ function TypingMode({ words, fromMistakes, onBack }) {
           <p className="text-2xl font-extrabold text-gray-800 dark:text-gray-100">{question}</p>
           {ttsSupported && (
             <button onClick={() => speak(question, cardDir === 'es2de' ? 'es-ES' : 'de-DE')}
-              className="text-xl text-gray-300 hover:text-amber-500 transition-colors p-1 active:scale-90">
+              className="text-xl text-gray-400 dark:text-gray-500 hover:text-amber-500 transition-colors p-1 active:scale-90">
               🔊
             </button>
           )}
@@ -718,7 +718,7 @@ function MatchingMode({ words, fromMistakes, onBack }) {
       <div className="card animate-slide-up text-center space-y-4">
         <div className="text-5xl">🎉</div>
         <h3 className="text-2xl font-extrabold">Alle Paare gefunden!</h3>
-        <p className="text-gray-500">Fehler: {mistakes}</p>
+        <p className="text-gray-500 dark:text-gray-400">Fehler: {mistakes}</p>
         <div className="flex gap-3 justify-center flex-wrap">
           <button onClick={restart} className="btn btn-primary">Nochmal</button>
           <button onClick={onBack} className="btn btn-outline">Zurück</button>

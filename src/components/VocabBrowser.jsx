@@ -224,9 +224,9 @@ export default function VocabBrowser({ selectedGrades, onBack }) {
           {topics.map((topic, ti) => (
             <div key={ti}>
               <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-2">
-                <span className="h-px flex-1 bg-gray-100" />
+                <span className="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
                 <span style={{ color: topic.color }}>{topic.name}</span>
-                <span className="h-px flex-1 bg-gray-100" />
+                <span className="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {topic.words.map((w, wi) => {

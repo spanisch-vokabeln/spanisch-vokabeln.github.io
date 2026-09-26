@@ -318,7 +318,7 @@ function ArcadeGame({ type, wordPool, highscore, onSave, onBack }) {
         </div>
 
         {!gameOver && type !== 'streak' && (
-          <div className="w-full bg-gray-100 h-2.5 rounded-full mb-6 overflow-hidden">
+          <div className="w-full bg-gray-100 dark:bg-gray-800 h-2.5 rounded-full mb-6 overflow-hidden">
             <div className="h-full transition-all duration-75 rounded-full" style={{ width: `${pct}%`, background: barColor }} />
           </div>
         )}
@@ -333,8 +333,8 @@ function ArcadeGame({ type, wordPool, highscore, onSave, onBack }) {
               {question.opts.map((opt, i) => {
                 let cls = 'btn-outline';
                 if (fbShow) {
-                  if (opt === question.correct) cls = 'bg-green-100 border-green-500 text-green-800';
-                  else if (opt === feedback?.picked) cls = 'bg-red-100 border-red-500 text-red-800 animate-shake';
+                  if (opt === question.correct) cls = 'border-2 bg-green-100 dark:bg-green-950 border-green-500 text-green-800 dark:text-green-200';
+                  else if (opt === feedback?.picked) cls = 'border-2 bg-red-100 dark:bg-red-950 border-red-500 text-red-800 dark:text-red-200 animate-shake';
                   else cls = 'btn-outline opacity-40';
                 }
                 return (
@@ -553,7 +553,7 @@ function BilderquizGame({ theme, highscore, onSave, onExit }) {
       ) : (
         <>
           <div key={round} className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl flex items-center justify-center mb-4 shadow-inner" style={{ height: 100 }}>
-            <span className="text-3xl font-extrabold text-indigo-600 bq-pop">{current.es}</span>
+            <span className="text-3xl font-extrabold text-indigo-600 dark:text-indigo-300 bq-pop">{current.es}</span>
           </div>
           <div className="text-center mb-3 h-6">
             {!locked && <p className="text-gray-400 dark:text-gray-500 text-sm">¿Qué imagen corresponde?</p>}
@@ -562,12 +562,12 @@ function BilderquizGame({ theme, highscore, onSave, onExit }) {
           </div>
           <div className="grid grid-cols-2 gap-3">
             {opts.map(opt => {
-              let ring = 'border-gray-100 hover:border-sky-300';
-              if (locked && opt.es === current.es) ring = 'border-emerald-500 bg-emerald-50';
-              else if (locked && picked?.es === opt.es) ring = 'border-red-500 bg-red-50 animate-shake';
+              let ring = 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:border-sky-300';
+              if (locked && opt.es === current.es) ring = 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950';
+              else if (locked && picked?.es === opt.es) ring = 'border-red-500 bg-red-50 dark:bg-red-950 animate-shake';
               return (
                 <button key={opt.es} disabled={locked} onClick={() => pick(opt)}
-                  className={`rounded-2xl border-2 bg-white dark:bg-gray-800 flex items-center justify-center transition-all ${ring}`} style={{ height: 110 }}>
+                  className={`rounded-2xl border-2 flex items-center justify-center transition-all ${ring}`} style={{ height: 110 }}>
                   {renderVisual(opt, 88)}
                 </button>
               );

@@ -110,7 +110,7 @@ export default function HomePage({ selectedGrades, onToggleGrade, onSelectAll, o
         ))}
 
         {selectedGrades.length > 0 && (
-          <div className="text-center text-sm text-indigo-600 font-semibold mt-3">
+          <div className="text-center text-sm text-indigo-600 dark:text-indigo-400 font-semibold mt-3">
             {formatGradeLabel(selectedGrades)} · {totalWords} Wörter
           </div>
         )}
@@ -218,9 +218,9 @@ function ActionCard({ icon, title, desc, color, disabled, onClick }) {
 
   return (
     <div
-      className={`card flex flex-col justify-between transition-all duration-300 ${disabled ? 'opacity-50' : 'hover:shadow-xl cursor-pointer'}`}
+      className={`card p-3.5 flex flex-col justify-between transition-all duration-300 ${disabled ? 'opacity-50' : 'hover:shadow-xl cursor-pointer'}`}
       onClick={disabled ? undefined : onClick}
-      style={{ background: c.bg, borderColor: disabled ? undefined : c.border, padding: '0.875rem' }}
+      style={{ background: c.bg, borderColor: disabled ? undefined : c.border }}
     >
       <div>
         <div className="text-2xl mb-1.5">{icon}</div>

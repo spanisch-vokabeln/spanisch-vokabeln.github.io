@@ -149,7 +149,7 @@ export default function TestMode({ selectedGrades, onBack }) {
             <div className="pt-2 border-t border-gray-100 dark:border-gray-800 space-y-0.5">
               <div className="flex gap-3 mb-2">
                 <button onClick={() => setSelectedTopics(new Set(allTopics.map(t => t.key)))}
-                  className="text-xs font-semibold text-indigo-600 hover:underline">Alle</button>
+                  className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Alle</button>
                 <button onClick={() => setSelectedTopics(new Set())}
                   className="text-xs font-semibold text-gray-400 hover:underline">Keine</button>
               </div>
@@ -272,8 +272,8 @@ function TestExam({ words, examMode, onFinish, onCancel }) {
     <div className="animate-slide-up space-y-4 relative">
       <div className="flex items-center justify-between">
         <button onClick={openExit} className={BACK_BTN}>← Abbrechen</button>
-        <span className="text-sm font-bold text-gray-500">{idx + 1} / {total}</span>
-        <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full font-bold">TEST</span>
+        <span className="text-sm font-bold text-gray-500 dark:text-gray-400">{idx + 1} / {total}</span>
+        <span className="text-xs bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-200 px-2 py-1 rounded-full font-bold">TEST</span>
       </div>
 
       <div className="w-full bg-gray-100 dark:bg-gray-800 h-2 rounded-full overflow-hidden">
@@ -286,7 +286,7 @@ function TestExam({ words, examMode, onFinish, onCancel }) {
           <p className="text-2xl sm:text-3xl font-extrabold text-gray-800 dark:text-gray-100">{question}</p>
           {ttsSupported && (
             <button onClick={() => speak(question, qLang)}
-              className="text-xl text-gray-300 hover:text-amber-500 transition-colors p-1 active:scale-90">
+              className="text-xl text-gray-400 dark:text-gray-500 hover:text-amber-500 transition-colors p-1 active:scale-90">
               🔊
             </button>
           )}
@@ -322,7 +322,7 @@ function TestExam({ words, examMode, onFinish, onCancel }) {
             }`}>
               {feedback.isCorrect
                 ? feedback.hint ? `Richtig! (${hintMessage(feedback.hint)}: ${feedback.correct})` : feedback.correct !== feedback.expected ? `¡Correcto! ✓ Auch richtig: ${feedback.expected}` : '¡Correcto! ✓'
-                : `Falsch. Richtig: „${feedback.correct}"`}
+                : `Falsch. Richtig: „${feedback.correct}“`}
             </div>
             {(!feedback.isCorrect || feedback.hint) && (
               <button onClick={proceed} className="btn btn-secondary w-full">Weiter →</button>
@@ -410,7 +410,7 @@ function TestResult({ results, totalWords, onBack, onRetry }) {
               ))}
             </div>
           )}
-          <p className="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-100">
+          <p className="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
             💡 Fehlerwörter gespeichert — übe sie unter <strong>Üben → Fehlerwörter</strong>
           </p>
         </div>
