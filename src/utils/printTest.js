@@ -1,15 +1,47 @@
+import { getPointRanges } from './grading';
+import { vocabByGrade } from '../data/vocab';
+
+const GRADE_ORDER = [7, 8, 9, 10, '7n', 'ks'];
+
+export function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// „Klasse 7“, „Klasse 7 + 8“, „Klasse 9 + Kursstufe (11/12)“ …
+export function formatGradeLabel(grades) {
+  const sorted = [...grades].sort((a, b) => GRADE_ORDER.indexOf(a) - GRADE_ORDER.indexOf(b));
+  const labels = sorted.map(g => vocabByGrade[g]?.label ?? `Klasse ${g}`);
+  let seenKlasse = false;
+  return labels.map(l => {
+    if (!l.startsWith('Klasse ')) return l;
+    if (!seenKlasse) { seenKlasse = true; return l; }
+    return l.slice('Klasse '.length);
+  }).join(' + ');
+}
+
+// Öffnet ein neues Fenster mit `html`. Gibt false zurück, wenn der Browser es blockiert.
+export function openPrintWindow(html) {
+  let win = null;
+  try { win = window.open('', '_blank'); } catch { win = null; }
+  if (!win) return false;
+  win.document.write(html);
+  win.document.close();
+  return true;
+}
+
+export const POPUP_BLOCKED_MSG =
+  'Das Druckfenster wurde blockiert. Bitte Pop-ups für diese Seite erlauben oder die App im Browser (nicht als Home-Bildschirm-App) öffnen.';
+
 export function generatePrintTest({ words, direction, gradeLabel, withAnswers = false }) {
   const pts = words.length;
-  const scale = [
-    { note: 1, von: Math.round(pts * 0.90), bis: pts },
-    { note: 2, von: Math.round(pts * 0.75), bis: Math.round(pts * 0.90) - 1 },
-    { note: 3, von: Math.round(pts * 0.60), bis: Math.round(pts * 0.75) - 1 },
-    { note: 4, von: Math.round(pts * 0.45), bis: Math.round(pts * 0.60) - 1 },
-    { note: 5, von: Math.round(pts * 0.20), bis: Math.round(pts * 0.45) - 1 },
-    { note: 6, von: 0,                      bis: Math.round(pts * 0.20) - 1 },
-  ];
+  const scale = getPointRanges(pts);
 
-  const title = `Vokabeltest Spanisch — ${gradeLabel}`;
+  const title = `Vokabeltest Spanisch — ${escapeHtml(gradeLabel)}`;
 
   const dirLabel = direction === 'es2de' ? 'Spanisch → Deutsch'
                  : direction === 'de2es' ? 'Deutsch → Spanisch'
@@ -24,16 +56,19 @@ export function generatePrintTest({ words, direction, gradeLabel, withAnswers = 
     return `<tr>
       <td class="num">${i + 1}.</td>
       <td class="qlang">${qLang}</td>
-      <td class="q">${question}</td>
+      <td class="q">${escapeHtml(question)}</td>
       <td class="alang">${aLang}</td>
-      <td class="a">${withAnswers ? `<span class="sol">${answer}</span>` : ''}</td>
+      <td class="a">${withAnswers ? `<span class="sol">${escapeHtml(answer)}</span>` : ''}</td>
       <td class="pt">/ 1</td>
     </tr>`;
   }).join('');
 
-  const scaleHTML = scale.map(s =>
-    `<span class="sn"><b>${s.note}</b> = ${s.von}–${s.bis} P.</span>`
-  ).join('');
+  const scaleHTML = scale.map(s => {
+    const range = s.von === null ? '–'
+                : s.von === s.bis ? `${s.von} P.`
+                : `${s.von}–${s.bis} P.`;
+    return `<span class="sn"><b>${s.note}</b> = ${range}</span>`;
+  }).join('');
 
   const answerPage = withAnswers ? '' : `
     <div style="page-break-after:always"></div>
@@ -49,7 +84,7 @@ export function generatePrintTest({ words, direction, gradeLabel, withAnswers = 
         const a = dir === 'es2de' ? w.de : w.es;
         const ql = dir === 'es2de' ? 'ES' : 'DE';
         const al = dir === 'es2de' ? 'DE' : 'ES';
-        return `<tr><td class="num">${i+1}.</td><td class="qlang">${ql}</td><td class="q">${q}</td><td class="alang">${al}</td><td class="a sol">${a}</td><td class="pt">/ 1</td></tr>`;
+        return `<tr><td class="num">${i+1}.</td><td class="qlang">${ql}</td><td class="q">${escapeHtml(q)}</td><td class="alang">${al}</td><td class="a sol">${escapeHtml(a)}</td><td class="pt">/ 1</td></tr>`;
       }).join('')}</tbody>
     </table>`;
 

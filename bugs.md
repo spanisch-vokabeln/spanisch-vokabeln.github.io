@@ -17,7 +17,7 @@ Ergebnis des Audits vom 26.09.2026. Jeder Block ist so geschrieben, dass er **in
 |---|-------|-----------|--------------|--------|
 | 1 | Antwortprüfung (Eintippen & Test) | 🔴 kritisch | – | ✅ |
 | 2 | Zuordnungs-Modus hängt fest | 🔴 kritisch | – | ✅ |
-| 3 | Notenschlüssel & Druckansichten | 🔴 kritisch | – | ⬜ |
+| 3 | Notenschlüssel & Druckansichten | 🔴 kritisch | – | ✅ |
 | 4 | Spiele (Arcade & Bilderquiz) | 🟠 Bug | – | ⬜ |
 | 5 | Üben- & Test-Ablauf | 🟠 Bug | 1 | ⬜ |
 | 6 | Lernstand, Fehlerwörter & Backup | 🟠 Bug | 2 | ⬜ |
@@ -130,13 +130,15 @@ Das passiert häufig:
 Wer 94 % hat, sieht im Schlüssel eine 2, bekommt aber eine 1.
 
 **Aufgaben**
-- [ ] **Eine** gemeinsame Quelle schaffen, z. B. `src/utils/grading.js` mit `GRADE_SCALE` und `getGrade(pct)`. Alle drei Stellen nutzen sie, die Anzeige im Setup wird aus `GRADE_SCALE` erzeugt. Welcher Schlüssel gilt, **vorher den Nutzer fragen**; Vorschlag: 92/80/67/50/25.
-- [ ] Punktebereiche im Druck aus derselben Skala berechnen. Die Bereiche dürfen sich nicht überschneiden und nicht ungültig sein (bei 3 Wörtern entsteht aktuell „2–1 P.“). Mit 1, 3, 5, 7, 10, 20 und 30 Wörtern prüfen.
-- [ ] Kopfzeile des Druck-Tests (`TestMode.jsx` ~Zeile 171) korrigieren: Sie zeigt „Klasse 7n“ / „Klasse ks/7“. Stattdessen `vocabByGrade[g].label` verwenden (sinnvoll nach Block 7), sauber sortieren, und bei mehreren Klassen z. B. „Klasse 7 + 8“ schreiben.
-- [ ] HTML-Escaping für alle Vokabeltexte in `printTest.js` und in `handlePrint` von `src/components/VocabBrowser.jsx`.
-- [ ] Druck der Vokabelliste (`VocabBrowser.jsx`, `handlePrint`): bei aktiver Suche nur die Treffer drucken, oder eindeutig beschriften, dass alles gedruckt wird.
-- [ ] Wenn `window.open` blockiert wird (Popup-Blocker, iOS-Web-App), soll eine sichtbare Meldung erscheinen statt still nichts zu tun.
-- [ ] Toten Code entfernen: `src/components/PrintTest.jsx` wird nirgends importiert und hat einen eigenen, vierten Druckgenerator.
+- [x] **Eine** gemeinsame Quelle schaffen, z. B. `src/utils/grading.js` mit `GRADE_SCALE` und `getGrade(pct)`. Alle drei Stellen nutzen sie, die Anzeige im Setup wird aus `GRADE_SCALE` erzeugt. Welcher Schlüssel gilt, **vorher den Nutzer fragen**; Vorschlag: 92/80/67/50/25.
+- [x] Punktebereiche im Druck aus derselben Skala berechnen. Die Bereiche dürfen sich nicht überschneiden und nicht ungültig sein (bei 3 Wörtern entsteht aktuell „2–1 P.“). Mit 1, 3, 5, 7, 10, 20 und 30 Wörtern prüfen.
+- [x] Kopfzeile des Druck-Tests (`TestMode.jsx` ~Zeile 171) korrigieren: Sie zeigt „Klasse 7n“ / „Klasse ks/7“. Stattdessen `vocabByGrade[g].label` verwenden (sinnvoll nach Block 7), sauber sortieren, und bei mehreren Klassen z. B. „Klasse 7 + 8“ schreiben.
+- [x] HTML-Escaping für alle Vokabeltexte in `printTest.js` und in `handlePrint` von `src/components/VocabBrowser.jsx`.
+- [x] Druck der Vokabelliste (`VocabBrowser.jsx`, `handlePrint`): bei aktiver Suche nur die Treffer drucken, oder eindeutig beschriften, dass alles gedruckt wird.
+- [x] Wenn `window.open` blockiert wird (Popup-Blocker, iOS-Web-App), soll eine sichtbare Meldung erscheinen statt still nichts zu tun.
+- [x] Toten Code entfernen: `src/components/PrintTest.jsx` wird nirgends importiert und hat einen eigenen, vierten Druckgenerator.
+
+**Umgesetzt (26.09.2026):** Schlüssel laut Nutzer **96/81/66/51/26** (der bisher im Setup angezeigte). Einzige Quelle ist `src/utils/grading.js` (`GRADE_SCALE`, `getGrade`, `getGradeForPoints`, `getPointRanges`); `getGrade` in `vocab.js` wurde entfernt. Die Ergebnis-Note rechnet ohne Rundung, die angezeigte Prozentzahl wird abgerundet, damit sie nie über einer Notengrenze liegt. Die Punktebereiche im Druck werden Punkt für Punkt aus derselben Funktion erzeugt. Unerreichbare Noten erscheinen als „–“ (z. B. bei 3 Wörtern: 1 = 3 P., 2 = –, 3 = 2 P., 5 = 1 P., 6 = 0 P.). Mit 1/3/5/7/10/20/30 Wörtern geprüft: keine Überschneidungen. Kopfzeile über `formatGradeLabel()` („Klasse 7 + 8“). HTML-Escaping und Popup-Blocker-Meldung (`openPrintWindow`, `POPUP_BLOCKED_MSG`) liegen in `printTest.js`. Die Vokabelliste druckt bei aktiver Suche nur die Treffer und schreibt das in die Kopfzeile. `PrintTest.jsx` ist gelöscht.
 
 **Fertig, wenn** Setup-Anzeige, Ergebnis-Note und Druck-Schlüssel bei denselben Prozentwerten dieselbe Note liefern.
 
@@ -314,3 +316,4 @@ _(Hier tragen Sitzungen Funde außerhalb ihres Blocks ein.)_
 - **Block 1 → Block 8:** `npm run build` zeigt weiterhin die CSS-Warnung „@import must precede all other statements“ (war schon vorher da, gehört zu Block 8).
 - **Block 1 → Block 5:** Der Artikel-Hinweis verhindert wie der Akzent-Hinweis das automatische Weiterspringen (Nutzer muss „Weiter“ tippen). Falls das zu viele Klicks sind, in Block 5 überdenken.
 - **Block 2 → Block 6:** Im Zuordnungs-Modus werden Fehlerwörter wie in den anderen Modi erst am Rundenende gespeichert und die Liste dabei überschrieben (bei 0 Fehlern gelöscht). Das Zusammenführen bzw. Speichern bei Abbruch gehört zu Block 6.
+- **Block 3 → Block 7:** Die Druck-Kopfzeile nutzt jetzt `vocabByGrade[g].label`. Solange 7n ebenfalls „Klasse 7“ heißt, steht bei 7 + 7n dort „Klasse 7 + 7“. Das behebt die Umbenennung in Block 7 automatisch.

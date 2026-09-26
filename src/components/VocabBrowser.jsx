@@ -4,6 +4,7 @@ import { speak, ttsSupported } from '../utils/speech';
 import { getWordStatus } from '../utils/progress';
 import FeedbackModal from './FeedbackModal';
 import FloatingBack from './FloatingBack';
+import { escapeHtml, openPrintWindow, POPUP_BLOCKED_MSG } from '../utils/printTest';
 
 const ALL_TAB = 'all';
 const STATUS_COLOR = { new: '#d1d5db', good: '#22c55e', medium: '#f59e0b', hard: '#ef4444' };
@@ -17,6 +18,7 @@ export default function VocabBrowser({ selectedGrades, onBack }) {
   const [showDE, setShowDE]       = useState(false);
   const [groupByUnidad, setGroupByUnidad] = useState(false);
   const [reportWord, setReportWord] = useState(null);
+  const [printError, setPrintError] = useState(false);
 
   const isAllTab = activeTab === ALL_TAB;
 
@@ -64,17 +66,26 @@ export default function VocabBrowser({ selectedGrades, onBack }) {
   const switchTab = (tab) => { setActiveTab(tab); setSearch(''); setFlipped({}); setGroupByUnidad(false); };
 
   const handlePrint = () => {
-    const rows = topics.map(t =>
+    // Bei aktiver Suche nur die Treffer drucken, gruppiert nach Thema
+    const printTopics = filtered
+      ? topics
+          .map((t, ti) => ({ name: t.name, words: filtered.filter(w => w.topicIdx === ti) }))
+          .filter(t => t.words.length > 0)
+      : topics;
+    const wordCount = printTopics.reduce((n, t) => n + t.words.length, 0);
+    const wordsLabel = `${wordCount} ${wordCount === 1 ? 'Wort' : 'Wörter'}`;
+    const meta = filtered
+      ? `Suchtreffer für „${escapeHtml(search.trim())}“ · ${wordsLabel}`
+      : `${printTopics.length} Themen · ${wordsLabel}`;
+    const rows = printTopics.map(t =>
       `<div class="topic">
-        <h3>${t.name}</h3>
+        <h3>${escapeHtml(t.name)}</h3>
         <table>${t.words.map(w =>
-          `<tr><td class="es">${w.es}</td><td class="de">${w.de}</td></tr>`
+          `<tr><td class="es">${escapeHtml(w.es)}</td><td class="de">${escapeHtml(w.de)}</td></tr>`
         ).join('')}</table>
       </div>`
     ).join('');
-    const win = window.open('', '_blank');
-    if (!win) return;
-    win.document.write(`<!DOCTYPE html><html><head>
+    const html = `<!DOCTYPE html><html><head>
       <meta charset="utf-8"><title>Español Vokabeln</title>
       <style>
         body{font-family:Arial,sans-serif;padding:24px;max-width:820px;margin:0 auto}
@@ -90,11 +101,11 @@ export default function VocabBrowser({ selectedGrades, onBack }) {
       </style>
     </head><body>
       <h1>🇪🇸 Español Vokabeln</h1>
-      <p class="meta">${topics.length} Themen · ${allWords.length} Wörter</p>
+      <p class="meta">${meta}</p>
       <button class="print-btn" onclick="window.print()">🖨️ Drucken / Als PDF speichern</button>
       ${rows}
-    </body></html>`);
-    win.document.close();
+    </body></html>`;
+    setPrintError(!openPrintWindow(html));
   };
 
   return (
@@ -110,7 +121,7 @@ export default function VocabBrowser({ selectedGrades, onBack }) {
         <div className="flex items-center gap-1 flex-shrink-0">
           <button onClick={handlePrint}
             className="w-9 h-9 flex items-center justify-center border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl text-sm transition-all"
-            title="Drucken / PDF">
+            title={filtered ? `${filtered.length} Suchtreffer drucken / PDF` : 'Alle angezeigten Wörter drucken / PDF'}>
             🖨️
           </button>
           {hasUnidades && (
@@ -130,6 +141,12 @@ export default function VocabBrowser({ selectedGrades, onBack }) {
           </button>
         </div>
       </div>
+
+      {printError && (
+        <p role="alert" className="mt-3 text-sm text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950 rounded-xl p-3">
+          {POPUP_BLOCKED_MSG}
+        </p>
+      )}
 
       <div className="animate-slide-up space-y-4 mt-4">
       {/* Tabs */}

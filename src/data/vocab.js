@@ -3343,13 +3343,3 @@ export function buildWordPool(grades) {
     );
   });
 }
-
-// Converts a percentage score to a German school grade (Schulnote 1–6)
-export function getGrade(pct) {
-  if (pct >= 92) return { note: 1, label: 'Sehr gut' };
-  if (pct >= 80) return { note: 2, label: 'Gut' };
-  if (pct >= 67) return { note: 3, label: 'Befriedigend' };
-  if (pct >= 50) return { note: 4, label: 'Ausreichend' };
-  if (pct >= 25) return { note: 5, label: 'Mangelhaft' };
-  return { note: 6, label: 'Ungenügend' };
-}

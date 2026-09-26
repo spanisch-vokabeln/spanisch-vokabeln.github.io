@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import FloatingBack from './FloatingBack';
-import { vocabByGrade, getGrade } from '../data/vocab';
+import { vocabByGrade } from '../data/vocab';
+import { GRADE_SCALE, getGradeForPoints } from '../utils/grading';
 import { compareAnswers, hintMessage } from '../utils/textComparison';
 import { recordWord, setMistakes } from '../utils/progress';
 import { speak, ttsSupported } from '../utils/speech';
-import { generatePrintTest } from '../utils/printTest';
+import { generatePrintTest, formatGradeLabel, openPrintWindow, POPUP_BLOCKED_MSG } from '../utils/printTest';
 
 const BACK_BTN = 'px-4 py-2.5 bg-rose-100 dark:bg-rose-950 hover:bg-rose-200 dark:hover:bg-rose-900 active:scale-95 text-rose-700 dark:text-rose-300 font-semibold text-sm rounded-xl transition-all';
 
@@ -19,6 +20,7 @@ export default function TestMode({ selectedGrades, onBack }) {
   const [config, setConfig] = useState({ count: 20, direction: 'mix' });
   const [results, setResults] = useState(null);
   const [showFilter, setShowFilter] = useState(false);
+  const [printError, setPrintError] = useState(false);
 
   const allTopics = useMemo(() =>
     selectedGrades.flatMap(g =>
@@ -145,10 +147,10 @@ export default function TestMode({ selectedGrades, onBack }) {
         <div className="bg-amber-50 dark:bg-amber-950 rounded-xl p-4 text-sm text-amber-800 dark:text-amber-200 space-y-2">
           <div className="font-bold">Notenschlüssel</div>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 text-xs">
-            {[['1','≥96%'],['2','≥81%'],['3','≥66%'],['4','≥51%'],['5','≥26%'],['6','<26%']].map(([note, pct]) => (
-              <div key={note} className="bg-white dark:bg-gray-800 rounded-lg p-2 text-center">
-                <div className="font-extrabold text-amber-700 dark:text-amber-400">{note}</div>
-                <div className="text-amber-500 dark:text-amber-500">{pct}</div>
+            {GRADE_SCALE.map((g, i) => (
+              <div key={g.note} className="bg-white dark:bg-gray-800 rounded-lg p-2 text-center">
+                <div className="font-extrabold text-amber-700 dark:text-amber-400">{g.note}</div>
+                <div className="text-amber-500 dark:text-amber-500">{g.min > 0 ? `≥${g.min}%` : `<${GRADE_SCALE[i - 1].min}%`}</div>
               </div>
             ))}
           </div>
@@ -168,17 +170,19 @@ export default function TestMode({ selectedGrades, onBack }) {
               if (dir === 'mix') dir = Math.random() > 0.5 ? 'es2de' : 'de2es';
               return { ...w, dir };
             });
-            const gradeLabel = selectedGrades.length === 1
-              ? `Klasse ${selectedGrades[0]}`
-              : `Klasse ${[...selectedGrades].sort((a,b)=>a-b).join('/')}`;
+            const gradeLabel = formatGradeLabel(selectedGrades);
             const html = generatePrintTest({ words, direction: config.direction, gradeLabel });
-            const win = window.open('', '_blank');
-            if (win) { win.document.write(html); win.document.close(); }
+            setPrintError(!openPrintWindow(html));
           }}
           className="btn-outline btn w-full text-sm font-semibold disabled:opacity-40"
         >
           🖨️ Als Klassentest drucken
         </button>
+        {printError && (
+          <p role="alert" className="text-sm text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950 rounded-xl p-3">
+            {POPUP_BLOCKED_MSG}
+          </p>
+        )}
       </div>
     </div>
     </>
@@ -317,8 +321,9 @@ function TestExam({ words, onFinish, onCancel }) {
 function TestResult({ results, totalWords, onBack, onRetry }) {
   const [showMistakes, setShowMistakes] = useState(false);
   const correct  = results.filter(r => r.isCorrect).length;
-  const pct      = Math.round((correct / totalWords) * 100);
-  const grade    = getGrade(pct);
+  // abrunden, damit die angezeigte Prozentzahl nie über der Notengrenze liegt
+  const pct      = Math.floor((correct / totalWords) * 100);
+  const grade    = getGradeForPoints(correct, totalWords);
   const mistakes = results.filter(r => !r.isCorrect);
   const accents  = results.filter(r => r.hasAccentWarning);
   const articles = results.filter(r => r.hint === 'article' || r.hint === 'article-accent');
