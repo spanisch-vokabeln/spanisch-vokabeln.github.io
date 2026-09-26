@@ -18,7 +18,7 @@ Ergebnis des Audits vom 26.09.2026. Jeder Block ist so geschrieben, dass er **in
 | 1 | Antwortprüfung (Eintippen & Test) | 🔴 kritisch | – | ✅ |
 | 2 | Zuordnungs-Modus hängt fest | 🔴 kritisch | – | ✅ |
 | 3 | Notenschlüssel & Druckansichten | 🔴 kritisch | – | ✅ |
-| 4 | Spiele (Arcade & Bilderquiz) | 🟠 Bug | – | ⬜ |
+| 4 | Spiele (Arcade & Bilderquiz) | 🟠 Bug | – | ✅ |
 | 5 | Üben- & Test-Ablauf | 🟠 Bug | 1 | ⬜ |
 | 6 | Lernstand, Fehlerwörter & Backup | 🟠 Bug | 2 | ⬜ |
 | 7 | Vokabeldaten & Klassen-Bezeichnungen | 🟠 Bug | 1 | ⬜ |
@@ -149,16 +149,18 @@ Wer 94 % hat, sieht im Schlüssel eine 2, bekommt aber eine 1.
 **Datei:** `src/components/GamesHub.jsx`
 
 **Aufgaben**
-- [ ] **Leere Wortliste ohne Klassenwahl:** In Zeile 21 wird `buildWordPool([])` aufgerufen. Der Text sagt „Alle Vokabeln (keine Klasse ausgewählt)“, trotzdem sind drei Spiele gesperrt. Ohne Auswahl sollen alle Klassen genommen werden.
-- [ ] **Contrarreloj-Uhr lässt sich austricksen:** Der `useEffect` der Uhr hat `score` in den Abhängigkeiten, deshalb startet das Intervall bei jedem Punkt neu. Wer schneller als in 1 Sekunde antwortet, verliert nie Zeit. Lösung: Endzeitpunkt (`deadline`) als Zeitstempel speichern, und `endGame` über eine Ref mit dem aktuellen Score aufrufen.
-- [ ] **Nebenwirkungen in State-Updatern entfernen:** `timeout()` und `endGame()` werden innerhalb von `setTimeLeft(t => …)` bzw. `setTimeLeftSec(t => …)` aufgerufen. Im StrictMode läuft das doppelt (dann gehen 2 Leben verloren).
-- [ ] **Supervivencia:** Timer anhalten, solange der Dialog „¿Abandonar el juego?“ offen ist. Derzeit verliert man dahinter Leben.
-- [ ] **Doppelte richtige Antworten:** Ablenker werden in Zeile 127 nur nach `w.es` gefiltert. Ein Ablenker kann denselben Text wie die richtige Antwort haben (z. B. „gut“). Nach Antworttext filtern und deduplizieren.
-- [ ] `question.cat` wird nie angezeigt, weil `buildWordPool` das Feld `topic` liefert, nicht `cat`. Richtiges Feld verwenden oder die Anzeige entfernen.
-- [ ] `pool.sort(() => Math.random() - 0.5)` ist verzerrt und sortiert tausende Wörter pro Frage. Stattdessen 3 Zufallsindizes ziehen.
-- [ ] Offene `setTimeout`s beim Verlassen des Spiels abbrechen (Cleanup, z. B. mit einer Ref-Liste).
-- [ ] **Bilderquiz:** Wird während der Feedback-Pause der Modus gewechselt, ruft `next()` doppelt auf. Timer abbrechen. Ebenso beim Verlassen.
-- [ ] Rekorde erst nach Spielende speichern und „¡NUEVO RÉCORD!“ auch im Racha-Modus anzeigen. Derzeit wird dort bei jedem Treffer gespeichert und nie ein Rekord angezeigt.
+- [x] **Leere Wortliste ohne Klassenwahl:** In Zeile 21 wird `buildWordPool([])` aufgerufen. Der Text sagt „Alle Vokabeln (keine Klasse ausgewählt)“, trotzdem sind drei Spiele gesperrt. Ohne Auswahl sollen alle Klassen genommen werden.
+- [x] **Contrarreloj-Uhr lässt sich austricksen:** Der `useEffect` der Uhr hat `score` in den Abhängigkeiten, deshalb startet das Intervall bei jedem Punkt neu. Wer schneller als in 1 Sekunde antwortet, verliert nie Zeit. Lösung: Endzeitpunkt (`deadline`) als Zeitstempel speichern, und `endGame` über eine Ref mit dem aktuellen Score aufrufen.
+- [x] **Nebenwirkungen in State-Updatern entfernen:** `timeout()` und `endGame()` werden innerhalb von `setTimeLeft(t => …)` bzw. `setTimeLeftSec(t => …)` aufgerufen. Im StrictMode läuft das doppelt (dann gehen 2 Leben verloren).
+- [x] **Supervivencia:** Timer anhalten, solange der Dialog „¿Abandonar el juego?“ offen ist. Derzeit verliert man dahinter Leben.
+- [x] **Doppelte richtige Antworten:** Ablenker werden in Zeile 127 nur nach `w.es` gefiltert. Ein Ablenker kann denselben Text wie die richtige Antwort haben (z. B. „gut“). Nach Antworttext filtern und deduplizieren.
+- [x] `question.cat` wird nie angezeigt, weil `buildWordPool` das Feld `topic` liefert, nicht `cat`. Richtiges Feld verwenden oder die Anzeige entfernen.
+- [x] `pool.sort(() => Math.random() - 0.5)` ist verzerrt und sortiert tausende Wörter pro Frage. Stattdessen 3 Zufallsindizes ziehen.
+- [x] Offene `setTimeout`s beim Verlassen des Spiels abbrechen (Cleanup, z. B. mit einer Ref-Liste).
+- [x] **Bilderquiz:** Wird während der Feedback-Pause der Modus gewechselt, ruft `next()` doppelt auf. Timer abbrechen. Ebenso beim Verlassen.
+- [x] Rekorde erst nach Spielende speichern und „¡NUEVO RÉCORD!“ auch im Racha-Modus anzeigen. Derzeit wird dort bei jedem Treffer gespeichert und nie ein Rekord angezeigt.
+
+**Umgesetzt (26.09.2026):** Ohne Klassenwahl kommen alle Klassen in den Wortpool (per `useMemo`, nach `es`+`de` dedupliziert). `ArcadeGame` hält Punkte, Leben und Spielende zusätzlich in Refs, damit Timer nie veraltete Werte lesen; Nebenwirkungen laufen nicht mehr in State-Updatern. Contrarreloj rechnet mit einem Endzeitpunkt (`deadlineRef`), ±2 s/−1 s verschieben ihn. Supervivencia und Contrarreloj pausieren, solange der Abbruch-Dialog offen ist (Restzeit wird gemerkt). Ablenker kommen aus `pickDistractors()`: zufällige Indizes, kein gleicher Antworttext und kein Wort mit gleichem Fragetext (also nicht „bueno“ als Ablenker, wenn nach „gut“ → „bien“ gefragt wird). Angezeigt wird jetzt `topic`. Alle `setTimeout`s laufen über `later()` und werden bei Spielende und Unmount abgebrochen. **Racha:** Der erste Fehler beendet jetzt die Serie (Endbildschirm mit „¡NUEVO RÉCORD!“), der Rekord wird erst dann gespeichert; die Beschreibung auf der Karte ist angepasst. Bilderquiz: Timer liegt in einer Ref und wird bei Moduswechsel, neuer Frage und Verlassen gelöscht. Im Browser getestet (375 px): Contrarreloj mit 16 richtig/47 falsch endet nach 44,8 s (erwartet 45), mit 20 richtig in < 1 s Abstand und 47 falsch nach 53,1 s (erwartet 53); 63 Fragen ohne doppelte Optionen; 25 s Abbruch-Dialog kostet kein Leben; ein Timeout kostet genau 1 Leben; Moduswechsel im Bilderquiz während der Pause ohne Doppelsprung.
 
 **Fertig, wenn**
 - Contrarreloj bei schnellem Antworten trotzdem nach ≈ 60 s + Bonus endet.
@@ -317,3 +319,4 @@ _(Hier tragen Sitzungen Funde außerhalb ihres Blocks ein.)_
 - **Block 1 → Block 5:** Der Artikel-Hinweis verhindert wie der Akzent-Hinweis das automatische Weiterspringen (Nutzer muss „Weiter“ tippen). Falls das zu viele Klicks sind, in Block 5 überdenken.
 - **Block 2 → Block 6:** Im Zuordnungs-Modus werden Fehlerwörter wie in den anderen Modi erst am Rundenende gespeichert und die Liste dabei überschrieben (bei 0 Fehlern gelöscht). Das Zusammenführen bzw. Speichern bei Abbruch gehört zu Block 6.
 - **Block 3 → Block 7:** Die Druck-Kopfzeile nutzt jetzt `vocabByGrade[g].label`. Solange 7n ebenfalls „Klasse 7“ heißt, steht bei 7 + 7n dort „Klasse 7 + 7“. Das behebt die Umbenennung in Block 7 automatisch.
+- **Block 4 → Block 10:** `GamesHub.jsx` hat jetzt eine eigene Fisher-Yates-Funktion `shuffled()`; beim Zusammenführen in `src/utils/shuffle.js` mitnehmen (ebenso die `shuffle`-Funktion im Bilderquiz).

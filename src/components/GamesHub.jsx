@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { buildWordPool } from '../data/vocab';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { buildWordPool, vocabByGrade } from '../data/vocab';
 import { bilderquizThemes } from '../data/bilderquiz';
 import FloatingBack from './FloatingBack';
 
@@ -18,7 +18,16 @@ export default function GamesHub({ selectedGrades, onBack }) {
     localStorage.setItem(`gm_${type}`, val);
   };
 
-  const wordPool = buildWordPool(selectedGrades.length ? selectedGrades : []);
+  // No grade selected → play with all grades. Deduplicate identical es/de pairs.
+  const wordPool = useMemo(() => {
+    const grades = selectedGrades.length ? selectedGrades : Object.keys(vocabByGrade);
+    const seen = new Set();
+    return buildWordPool(grades).filter(w => {
+      const k = `${w.es}|${w.de}`;
+      if (seen.has(k)) return false;
+      seen.add(k); return true;
+    });
+  }, [selectedGrades]);
 
   if (game === 'survival')   return <ArcadeGame key="survival"   type="survival"   wordPool={wordPool} highscore={scores.survival}   onSave={v => saveScore('survival',v)}   onBack={() => setGame(null)} />;
   if (game === 'timeattack') return <ArcadeGame key="timeattack" type="timeattack" wordPool={wordPool} highscore={scores.timeattack} onSave={v => saveScore('timeattack',v)} onBack={() => setGame(null)} />;
@@ -38,7 +47,7 @@ export default function GamesHub({ selectedGrades, onBack }) {
         <div className="text-xs text-center text-gray-400">{wordPool.length} Wörter aus {selectedGrades.length} Klasse(n) · Klassenübergreifend spielen</div>
       )}
       {selectedGrades.length === 0 && (
-        <div className="text-xs text-center text-violet-500 font-medium">Alle Vokabeln (keine Klasse ausgewählt) · Wähle auf der Startseite Klassen für gezielteres Training</div>
+        <div className="text-xs text-center text-violet-500 font-medium">{wordPool.length} Wörter aus allen Klassen (keine Klasse ausgewählt) · Wähle auf der Startseite Klassen für gezielteres Training</div>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -65,7 +74,7 @@ export default function GamesHub({ selectedGrades, onBack }) {
         <GameCard
           icon="🔥" bg="var(--game-bg-amber)" color="#d97706"
           title="Racha de Vocabulario"
-          desc="Unbegrenzte Zeit · Längste Treffserie"
+          desc="Unbegrenzte Zeit · Ein Fehler beendet die Serie"
           badge={`Rekord: ${scores.streak} Treffer`}
           btnLabel="Jugar 🔥"
           btnColor="#d97706"
@@ -106,104 +115,183 @@ function GameCard({ icon, bg, color, title, desc, badge, btnLabel, btnColor, onC
 }
 
 // ─── Arcade Game (Survival / Time Attack / Streak) ───────────────────────────
+const TIME_ATTACK_MS = 60000;
+const SURVIVAL_START_MS = 10000;
+
+const shuffled = (arr) => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+// Picks up to `count` distractor texts. A candidate is skipped if its answer text
+// equals the correct one or if its prompt text is the same as the question's
+// (e.g. "gut" → bien / bueno: both would be correct).
+function pickDistractors(pool, item, isEsToDe, count = 3) {
+  const promptOf = w => (isEsToDe ? w.es : w.de);
+  const answerOf = w => (isEsToDe ? w.de : w.es);
+  const seen = new Set([answerOf(item)]);
+  const out = [];
+  const tryAdd = (w) => {
+    const text = answerOf(w);
+    if (seen.has(text) || promptOf(w) === promptOf(item)) return;
+    seen.add(text); out.push(text);
+  };
+  for (let tries = 0; tries < 60 && out.length < count; tries++) {
+    tryAdd(pool[Math.floor(Math.random() * pool.length)]);
+  }
+  // Small pools: scan everything from a random offset
+  const offset = Math.floor(Math.random() * pool.length);
+  for (let k = 0; k < pool.length && out.length < count; k++) {
+    tryAdd(pool[(offset + k) % pool.length]);
+  }
+  return out;
+}
+
 function ArcadeGame({ type, wordPool, highscore, onSave, onBack }) {
   const [score, setScore]     = useState(0);
   const [lives, setLives]     = useState(3);
-  const [timeLeft, setTimeLeft]     = useState(10000);
-  const [timeLeftSec, setTimeLeftSec] = useState(60);
+  const [timeLeft, setTimeLeft]     = useState(SURVIVAL_START_MS);
+  const [timeLeftSec, setTimeLeftSec] = useState(TIME_ATTACK_MS / 1000);
   const [question, setQuestion]  = useState(null);
   const [gameOver, setGameOver]  = useState(false);
   const [feedback, setFeedback]  = useState(null);
   const [fbShow, setFbShow]      = useState(false);
   const [newRecord, setNewRecord] = useState(false);
   const [showExit, setShowExit]  = useState(false);
-  const speedRef = useRef(10000);
+
+  // Refs hold the live game values so timers never read stale state
+  const speedRef   = useRef(SURVIVAL_START_MS);
+  const scoreRef   = useRef(0);
+  const livesRef   = useRef(3);
+  const overRef    = useRef(false);
+  const highRef    = useRef(highscore);
+  const timersRef  = useRef([]);
+  // Survival: remaining ms of the current question while its timer is paused
+  const survivalRemRef = useRef({ qid: null, ms: SURVIVAL_START_MS });
+  // Time attack: deadline while running, remaining ms while paused
+  const deadlineRef = useRef(0);
+  const taRemRef    = useRef(TIME_ATTACK_MS);
+
+  const later = (fn, ms) => { timersRef.current.push(setTimeout(fn, ms)); };
+  const clearTimers = () => { timersRef.current.forEach(clearTimeout); timersRef.current = []; };
+  useEffect(() => clearTimers, []);
+
+  const updateScore = (v) => { scoreRef.current = v; setScore(v); };
+  const updateLives = (v) => { livesRef.current = v; setLives(v); };
 
   const genQuestion = () => {
-    if (!wordPool.length) return;
+    if (!wordPool.length || overRef.current) return;
     const item = wordPool[Math.floor(Math.random() * wordPool.length)];
     const isEsToDe = Math.random() > 0.5;
     const correct  = isEsToDe ? item.de : item.es;
-    const pool     = [...new Set(wordPool.filter(w => w.es !== item.es).map(w => isEsToDe ? w.de : w.es))];
-    const dist = pool.sort(() => Math.random() - 0.5).slice(0, 3);
-    const opts = [correct, ...dist].sort(() => Math.random() - 0.5);
-    setQuestion({ id: `${item.es}-${Date.now()}`, text: isEsToDe ? `¿Qué significa '${item.es}'?` : `Was bedeutet '${item.de}'?`, opts, correct, cat: item.cat });
+    const opts = shuffled([correct, ...pickDistractors(wordPool, item, isEsToDe)]);
+    setQuestion({ id: `${item.es}-${Date.now()}-${Math.random()}`, text: isEsToDe ? `¿Qué significa '${item.es}'?` : `Was bedeutet '${item.de}'?`, opts, correct, topic: item.topic });
     setFeedback(null); setFbShow(false);
     if (type === 'survival') setTimeLeft(speedRef.current);
   };
 
-  useEffect(() => {
-    setScore(0); setLives(3); setGameOver(false); setNewRecord(false);
+  const endGame = () => {
+    if (overRef.current) return;
+    overRef.current = true;
+    clearTimers();
+    setGameOver(true);
+    const final = scoreRef.current;
+    if (final > highRef.current) { setNewRecord(true); onSave(final); }
+  };
+
+  const loseLife = () => {
+    const nl = livesRef.current - 1;
+    updateLives(nl);
+    later(() => { if (nl <= 0) endGame(); else genQuestion(); }, 1200);
+  };
+
+  const startGame = () => {
+    clearTimers();
+    overRef.current = false;
+    highRef.current = highscore;
+    updateScore(0); updateLives(3);
+    setGameOver(false); setNewRecord(false);
     setFeedback(null); setFbShow(false);
-    speedRef.current = 10000;
-    if (type === 'timeattack') setTimeLeftSec(60);
-    else setTimeLeft(10000);
+    speedRef.current = SURVIVAL_START_MS;
+    taRemRef.current = TIME_ATTACK_MS;
+    setTimeLeft(SURVIVAL_START_MS);
+    setTimeLeftSec(TIME_ATTACK_MS / 1000);
     genQuestion();
-  }, [type]);
+  };
 
-  // Survival timer
+  useEffect(() => { startGame(); }, [type]);
+
+  // Survival timer (paused during feedback and the exit dialog)
   useEffect(() => {
-    if (gameOver || type !== 'survival' || fbShow) return;
+    if (gameOver || type !== 'survival' || fbShow || showExit || !question) return;
+    const qid = question.id;
+    const rem = survivalRemRef.current;
+    const deadline = Date.now() + (rem.qid === qid ? rem.ms : speedRef.current);
     const iv = setInterval(() => {
-      setTimeLeft(t => {
-        if (t <= 50) { clearInterval(iv); timeout(); return 0; }
-        return t - 50;
-      });
+      const left = Math.max(0, deadline - Date.now());
+      setTimeLeft(left);
+      if (left <= 0) {
+        clearInterval(iv);
+        setFeedback({ isCorrect: false, picked: null }); setFbShow(true);
+        loseLife();
+      }
     }, 50);
-    return () => clearInterval(iv);
-  }, [question?.id, gameOver, fbShow, type]);
+    return () => {
+      clearInterval(iv);
+      survivalRemRef.current = { qid, ms: Math.max(0, deadline - Date.now()) };
+    };
+  }, [question?.id, gameOver, fbShow, showExit, type]);
 
-  // Time attack clock
+  // Time attack clock (deadline-based, paused during the exit dialog)
   useEffect(() => {
-    if (gameOver || type !== 'timeattack') return;
-    const iv = setInterval(() => {
-      setTimeLeftSec(t => {
-        if (t <= 1) { clearInterval(iv); endGame(score); return 0; }
-        return t - 1;
-      });
-    }, 1000);
-    return () => clearInterval(iv);
-  }, [gameOver, type, score]);
+    if (gameOver || type !== 'timeattack' || showExit) return;
+    deadlineRef.current = Date.now() + taRemRef.current;
+    const tick = () => {
+      const left = deadlineRef.current - Date.now();
+      setTimeLeftSec(Math.max(0, Math.ceil(left / 1000)));
+      if (left <= 0) { clearInterval(iv); endGame(); }
+    };
+    const iv = setInterval(tick, 200);
+    tick();
+    return () => {
+      clearInterval(iv);
+      taRemRef.current = Math.max(0, deadlineRef.current - Date.now());
+    };
+  }, [gameOver, type, showExit]);
 
-  const timeout = () => {
-    setFeedback({ isCorrect: false, picked: null }); setFbShow(true);
-    const nl = lives - 1; setLives(nl);
-    setTimeout(() => { if (nl <= 0) endGame(score); else genQuestion(); }, 1200);
+  const adjustClock = (ms) => {
+    deadlineRef.current += ms;
+    setTimeLeftSec(Math.max(0, Math.ceil((deadlineRef.current - Date.now()) / 1000)));
   };
 
   const pick = (opt) => {
     if (fbShow || gameOver) return;
     const isCorrect = opt === question.correct;
     setFeedback({ isCorrect, picked: opt }); setFbShow(true);
-    const ns = isCorrect ? score + 1 : score;
     if (isCorrect) {
-      setScore(ns);
-      if (type === 'timeattack') setTimeLeftSec(t => t + 2);
-      else if (type === 'survival') speedRef.current = Math.max(2500, 10000 - ns * 150);
-      else if (type === 'streak' && ns > highscore) onSave(ns);
-      setTimeout(() => genQuestion(), 400);
+      const ns = scoreRef.current + 1;
+      updateScore(ns);
+      if (type === 'timeattack') adjustClock(2000);
+      else if (type === 'survival') speedRef.current = Math.max(2500, SURVIVAL_START_MS - ns * 150);
+      later(genQuestion, 400);
+    } else if (type === 'timeattack') {
+      adjustClock(-1000);
+      later(genQuestion, 600);
+    } else if (type === 'survival') {
+      loseLife();
     } else {
-      if (type === 'timeattack') { setTimeLeftSec(t => Math.max(0, t - 1)); setTimeout(() => genQuestion(), 600); }
-      else if (type === 'survival') { const nl = lives - 1; setLives(nl); setTimeout(() => { if (nl <= 0) endGame(score); else genQuestion(); }, 1200); }
-      else if (type === 'streak') { setTimeout(() => { setScore(0); genQuestion(); }, 1200); }
+      // Streak: the first mistake ends the run
+      later(endGame, 1200);
     }
   };
 
-  const endGame = (final) => {
-    setGameOver(true);
-    if (final > highscore) { setNewRecord(true); onSave(final); }
-  };
+  const restart = startGame;
 
-  const restart = () => {
-    setScore(0); setLives(3); setGameOver(false); setNewRecord(false);
-    setFeedback(null); setFbShow(false);
-    speedRef.current = 10000;
-    if (type === 'timeattack') setTimeLeftSec(60);
-    else setTimeLeft(10000);
-    genQuestion();
-  };
-
-  const pct = type === 'survival' ? (timeLeft / speedRef.current) * 100 : (timeLeftSec / 60) * 100;
+  const pct = type === 'survival' ? (timeLeft / speedRef.current) * 100 : Math.min(100, (timeLeftSec / 60) * 100);
   const barColor = type === 'survival'
     ? (pct > 50 ? '#6366f1' : pct > 25 ? '#f59e0b' : '#dc2626')
     : (timeLeftSec > 20 ? '#16a34a' : timeLeftSec > 8 ? '#f59e0b' : '#dc2626');
@@ -237,7 +325,7 @@ function ArcadeGame({ type, wordPool, highscore, onSave, onBack }) {
         {question && !gameOver && (
           <div>
             <div className="mb-5 p-4 sm:p-5 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 text-center">
-              {question.cat && <span className="text-xs font-bold text-indigo-500 uppercase tracking-wide block mb-1">{question.cat}</span>}
+              {question.topic && <span className="text-xs font-bold text-indigo-500 uppercase tracking-wide block mb-1">{question.topic}</span>}
               <p className="text-base sm:text-xl font-bold dark:text-gray-100">{question.text}</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -370,8 +458,13 @@ function BilderquizGame({ theme, highscore, onSave, onExit }) {
   const [locked, setLocked]   = useState(false);
   const [picked, setPicked]   = useState(null);
   const [mode, setMode]       = useState('img2word');
+  const timerRef = useRef(null);
+
+  const clearTimer = () => { clearTimeout(timerRef.current); timerRef.current = null; };
+  useEffect(() => clearTimer, []);
 
   const next = (prev) => {
+    clearTimer();
     const pool = prev ? theme.words.filter(w => w.es !== prev.es) : theme.words;
     const word = pool[Math.floor(Math.random() * pool.length)];
     const dist = shuffle(theme.words.filter(w => w.es !== word.es)).slice(0, 3);
@@ -404,7 +497,7 @@ function BilderquizGame({ theme, highscore, onSave, onExit }) {
       speak(current.es);
     } else setStreak(0);
     const cur = current;
-    setTimeout(() => next(cur), ok ? 850 : 1400);
+    timerRef.current = setTimeout(() => next(cur), ok ? 850 : 1400);
   };
 
   if (!current) return null;
