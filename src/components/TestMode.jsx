@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import FloatingBack from './FloatingBack';
+import BackButton from './BackButton';
+import { shuffle } from '../utils/shuffle';
 import { vocabByGrade, uniqueWords } from '../data/vocab';
 import { GRADE_SCALE, getGradeForPoints } from '../utils/grading';
 import { hintMessage } from '../utils/textComparison';
@@ -11,11 +13,7 @@ import { AnswerInput, AccentKeys } from './AnswerInput';
 import ConfirmDialog from './ConfirmDialog';
 import { useBackHandler } from '../utils/backStack';
 
-const BACK_BTN = 'px-4 py-2.5 bg-rose-100 dark:bg-rose-950 hover:bg-rose-200 dark:hover:bg-rose-900 active:scale-95 text-rose-700 dark:text-rose-300 font-semibold text-sm rounded-xl transition-all';
 
-function shuffle(arr) {
-  return [...arr].map(v => ({ v, s: Math.random() })).sort((a, b) => a.s - b.s).map(({ v }) => v);
-}
 
 // ─── Test Setup ──────────────────────────────────────────────────────────────
 export default function TestMode({ selectedGrades, onBack }) {
@@ -82,7 +80,7 @@ export default function TestMode({ selectedGrades, onBack }) {
     <FloatingBack onClick={onBack} />
     <div className="animate-slide-up space-y-5">
       <div className="flex items-center gap-3">
-        <button onClick={onBack} className={BACK_BTN}>← Zurück</button>
+        <BackButton onClick={onBack} />
         <h2 className="text-xl font-extrabold text-gray-800 dark:text-gray-100">Vokabeltest</h2>
       </div>
 
@@ -279,7 +277,7 @@ function TestExam({ words, examMode, onFinish, onCancel }) {
   return (
     <div className="animate-slide-up space-y-4 relative">
       <div className="flex items-center justify-between">
-        <button onClick={openExit} className={BACK_BTN}>← Abbrechen</button>
+        <BackButton onClick={openExit}>← Abbrechen</BackButton>
         <span className="text-sm font-bold text-gray-500 dark:text-gray-400">{idx + 1} / {total}</span>
         <span className="text-xs bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-200 px-2 py-1 rounded-full font-bold">TEST</span>
       </div>
@@ -370,7 +368,7 @@ function TestResult({ results, totalWords, onBack, onRetry }) {
   return (
     <div className="animate-slide-up space-y-5">
       <div className="flex items-center gap-3">
-        <button onClick={onBack} className={BACK_BTN}>← Zurück</button>
+        <BackButton onClick={onBack} />
         <h2 className="text-xl font-extrabold text-gray-800 dark:text-gray-100">Testergebnis</h2>
       </div>
 

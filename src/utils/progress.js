@@ -1,5 +1,6 @@
 import { vocabByGrade } from '../data/vocab';
 import { storageGet, storageSet, storageRemove, storageGetJSON, storageSetJSON } from './storage';
+import { shuffle } from './shuffle';
 
 export const PROG_KEY    = 'vocab_progress';
 export const ERR_KEY     = 'vocab_mistakes';
@@ -124,14 +125,6 @@ export function getProgressSummary() {
   return total ? { total, good, medium, hard } : null;
 }
 
-function shuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
 
 // Hard/unseen words first; shuffled first so equal scores come in random order
 export function sortByDifficulty(words) {

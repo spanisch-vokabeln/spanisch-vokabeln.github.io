@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { buildWordPool, vocabByGrade } from '../data/vocab';
 import { bilderquizThemes } from '../data/bilderquiz';
 import FloatingBack from './FloatingBack';
+import BackButton from './BackButton';
+import { shuffle } from '../utils/shuffle';
+import { pickDistractors } from '../utils/distractors';
 import { storageGet, storageSet } from '../utils/storage';
 import { useBackHandler } from '../utils/backStack';
 import ConfirmDialog from './ConfirmDialog';
@@ -42,7 +45,7 @@ export default function GamesHub({ selectedGrades, onBack }) {
     <FloatingBack onClick={onBack} />
     <div className="animate-slide-up space-y-4">
       <div className="flex items-center gap-3">
-        <button onClick={onBack} className="px-4 py-2.5 bg-rose-100 dark:bg-rose-950 hover:bg-rose-200 dark:hover:bg-rose-900 active:scale-95 text-rose-700 dark:text-rose-300 font-semibold text-sm rounded-xl transition-all">← Zurück</button>
+        <BackButton onClick={onBack} />
         <h2 className="text-xl font-extrabold text-gray-800 dark:text-gray-100">Juegos de práctica</h2>
       </div>
 
@@ -121,39 +124,6 @@ function GameCard({ icon, bg, color, title, desc, badge, btnLabel, btnColor, onC
 const TIME_ATTACK_MS = 60000;
 const SURVIVAL_START_MS = 10000;
 
-const shuffled = (arr) => {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-};
-
-// Picks up to `count` distractor texts. A candidate is skipped if its answer text
-// equals the correct one or if its prompt text is the same as the question's
-// (e.g. "gut" → bien / bueno: both would be correct).
-function pickDistractors(pool, item, isEsToDe, count = 3) {
-  const promptOf = w => (isEsToDe ? w.es : w.de);
-  const answerOf = w => (isEsToDe ? w.de : w.es);
-  const seen = new Set([answerOf(item)]);
-  const out = [];
-  const tryAdd = (w) => {
-    const text = answerOf(w);
-    if (seen.has(text) || promptOf(w) === promptOf(item)) return;
-    seen.add(text); out.push(text);
-  };
-  for (let tries = 0; tries < 60 && out.length < count; tries++) {
-    tryAdd(pool[Math.floor(Math.random() * pool.length)]);
-  }
-  // Small pools: scan everything from a random offset
-  const offset = Math.floor(Math.random() * pool.length);
-  for (let k = 0; k < pool.length && out.length < count; k++) {
-    tryAdd(pool[(offset + k) % pool.length]);
-  }
-  return out;
-}
-
 function ArcadeGame({ type, wordPool, highscore, onSave, onBack }) {
   const [score, setScore]     = useState(0);
   const [lives, setLives]     = useState(3);
@@ -198,7 +168,7 @@ function ArcadeGame({ type, wordPool, highscore, onSave, onBack }) {
     const item = wordPool[Math.floor(Math.random() * wordPool.length)];
     const isEsToDe = Math.random() > 0.5;
     const correct  = isEsToDe ? item.de : item.es;
-    const opts = shuffled([correct, ...pickDistractors(wordPool, item, isEsToDe)]);
+    const opts = shuffle([correct, ...pickDistractors(item, isEsToDe ? 'es2de' : 'de2es', wordPool)]);
     setQuestion({ id: `${item.es}-${Date.now()}-${Math.random()}`, text: isEsToDe ? `¿Qué significa '${item.es}'?` : `Was bedeutet '${item.de}'?`, opts, correct, topic: item.topic });
     setFeedback(null); setFbShow(false);
     if (type === 'survival') setTimeLeft(speedRef.current);
@@ -418,7 +388,7 @@ function BilderquizView({ highscore, onSave, onBack }) {
   return (
     <div className="card animate-slide-up">
       <div className="flex justify-between items-center mb-6">
-        <button onClick={onBack} className="px-4 py-2.5 bg-rose-100 dark:bg-rose-950 hover:bg-rose-200 dark:hover:bg-rose-900 active:scale-95 text-rose-700 dark:text-rose-300 font-semibold text-sm rounded-xl transition-all">← Zurück</button>
+        <BackButton onClick={onBack} />
         <span>🖼️</span>
       </div>
       <h2 className="text-2xl font-extrabold text-center mb-2 dark:text-gray-100">Quiz de Imágenes</h2>
@@ -457,7 +427,6 @@ function BilderquizView({ highscore, onSave, onBack }) {
 function BilderquizGame({ theme, highscore, onSave, onExit }) {
   useBackHandler(true, onExit);
   const bestKey = `bq_${theme.id}`;
-  const shuffle = (arr) => [...arr].map(v => ({ v, s: Math.random() })).sort((a, b) => a.s - b.s).map(({ v }) => v);
 
   const [current, setCurrent] = useState(null);
   const [opts, setOpts]       = useState([]);
@@ -519,7 +488,7 @@ function BilderquizGame({ theme, highscore, onSave, onExit }) {
   return (
     <div className="card animate-slide-up max-w-2xl mx-auto">
       <div className="flex justify-between items-center mb-3">
-        <button onClick={onExit} className="px-4 py-2.5 bg-rose-100 dark:bg-rose-950 hover:bg-rose-200 dark:hover:bg-rose-900 active:scale-95 text-rose-700 dark:text-rose-300 font-semibold text-sm rounded-xl transition-all">← Salir</button>
+        <BackButton onClick={onExit}>← Salir</BackButton>
         <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">{theme.emoji} {theme.title}</span>
         <span className="text-sm font-bold text-amber-500">🏆 {best}</span>
       </div>

@@ -24,7 +24,7 @@ Ergebnis des Audits vom 26.09.2026. Jeder Block ist so geschrieben, dass er **in
 | 7 | Vokabeldaten & Klassen-Bezeichnungen | 🟠 Bug | 1 | ✅ |
 | 8 | CSS, Schrift & Dunkelmodus | 🟠 Bug | – | ✅ |
 | 9 | Navigation & Bedienbarkeit | 🟡 UX | 5, 8 | ✅ |
-| 10 | PWA, Aufräumen & Abhängigkeiten | ⚪ Technik | – | ⬜ |
+| 10 | PWA, Aufräumen & Abhängigkeiten | ⚪ Technik | – | ✅ |
 
 Die Blöcke 1–4 sind unabhängig voneinander und können in beliebiger Reihenfolge laufen.
 
@@ -310,15 +310,17 @@ Wer 94 % hat, sieht im Schlüssel eine 2, bekommt aber eine 1.
 ## Block 10 – PWA, Aufräumen & Abhängigkeiten ⚪
 
 **Aufgaben**
-- [ ] **Icons:** iOS unterstützt kein SVG als `apple-touch-icon`. PNG-Icons (180, 192, 512 px, plus maskable) aus `public/icon.svg` erzeugen und in `index.html` und `vite.config.js` (Manifest) eintragen.
-- [ ] `apple-mobile-web-app-capable` ist veraltet; zusätzlich `mobile-web-app-capable` setzen.
-- [ ] **Tote Dateien löschen:**
-  - [ ] `src/utils/darkMode.js` (Duplikat von `darkMode.jsx`, JSX in einer .js-Datei);
-  - [ ] `src/components/PrintTest.jsx`, falls nicht schon in Block 3 erledigt.
-- [ ] Doppelten `shuffle`-Code (PracticeMode, TestMode, GamesHub) in `src/utils/shuffle.js` zusammenführen (Fisher-Yates).
-- [ ] `npm audit fix` ausführen (6 Lücken, nur in Entwicklungs-Paketen), danach Build testen.
-- [ ] GitHub-Action (`.github/workflows/deploy.yml`) um `npm run check` (aus Block 1) vor dem Build ergänzen.
-- [ ] `README.md` mit Start-, Build- und Deploy-Anleitung anlegen.
+- [x] **Icons:** iOS unterstützt kein SVG als `apple-touch-icon`. PNG-Icons (180, 192, 512 px, plus maskable) aus `public/icon.svg` erzeugen und in `index.html` und `vite.config.js` (Manifest) eintragen.
+- [x] `apple-mobile-web-app-capable` ist veraltet; zusätzlich `mobile-web-app-capable` setzen.
+- [x] **Tote Dateien löschen:**
+  - [x] `src/utils/darkMode.js` (Duplikat von `darkMode.jsx`, JSX in einer .js-Datei);
+  - [x] `src/components/PrintTest.jsx`, falls nicht schon in Block 3 erledigt.
+- [x] Doppelten `shuffle`-Code (PracticeMode, TestMode, GamesHub) in `src/utils/shuffle.js` zusammenführen (Fisher-Yates).
+- [x] `npm audit fix` ausführen (6 Lücken, nur in Entwicklungs-Paketen), danach Build testen.
+- [x] GitHub-Action (`.github/workflows/deploy.yml`) um `npm run check` (aus Block 1) vor dem Build ergänzen.
+- [x] `README.md` mit Start-, Build- und Deploy-Anleitung anlegen.
+
+**Umgesetzt (26.09.2026):** PNG-Icons (`icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png` 180 px) werden mit `npm run icons` (`scripts/generate-icons.mjs`, Dev-Abhängigkeit `@resvg/resvg-js`) aus `public/icon.svg` und der neuen randlosen `public/icon-maskable.svg` (Inhalt in der 80-%-Schutzzone, für iOS und Android-maskable) erzeugt und sind eingecheckt. `icon.svg` hatte Streifen, die über die abgerundeten Ecken hinausragten – jetzt per `clipPath` abgeschnitten. Manifest und `index.html` nutzen die PNGs, `mobile-web-app-capable` ist ergänzt. `src/utils/darkMode.js` gelöscht (`PrintTest.jsx` war schon in Block 3 weg). Gemeinsames `src/utils/shuffle.js` (Fisher-Yates) für Üben, Test, Spiele, Bilderquiz und `sortByDifficulty`; GamesHub nutzt jetzt `pickDistractors` aus `src/utils/distractors.js`; neue Komponente `BackButton` ersetzt alle kopierten Zurück-Knöpfe (Notizen aus Block 4, 5, 9). `npm audit fix`: 0 Lücken, Build und Check grün. GitHub-Action: Node 22 und `npm run check` vor dem Build. `README.md` mit Start, Befehlen, Deploy und Aufbau.
 
 ---
 
@@ -331,11 +333,11 @@ _(Hier tragen Sitzungen Funde außerhalb ihres Blocks ein.)_
 - **Block 1 → Block 5:** Der Artikel-Hinweis verhindert wie der Akzent-Hinweis das automatische Weiterspringen (Nutzer muss „Weiter“ tippen). Falls das zu viele Klicks sind, in Block 5 überdenken.
 - **Block 2 → Block 6:** Im Zuordnungs-Modus werden Fehlerwörter wie in den anderen Modi erst am Rundenende gespeichert und die Liste dabei überschrieben (bei 0 Fehlern gelöscht). Das Zusammenführen bzw. Speichern bei Abbruch gehört zu Block 6.
 - **Block 3 → Block 7 (erledigt):** Die Druck-Kopfzeile nutzt jetzt `vocabByGrade[g].label`. Solange 7n ebenfalls „Klasse 7“ heißt, steht bei 7 + 7n dort „Klasse 7 + 7“. Das behebt die Umbenennung in Block 7 automatisch.
-- **Block 4 → Block 10:** `GamesHub.jsx` hat jetzt eine eigene Fisher-Yates-Funktion `shuffled()`; beim Zusammenführen in `src/utils/shuffle.js` mitnehmen (ebenso die `shuffle`-Funktion im Bilderquiz).
-- **Block 5 → Block 10:** `pickDistractors` gibt es jetzt zweimal: `src/utils/distractors.js` (Üben) und eine gleichartige Funktion in `GamesHub.jsx` (Block 4). Beim Aufräumen GamesHub auf die Util umstellen.
+- **Block 4 → Block 10 (erledigt):** `GamesHub.jsx` hat jetzt eine eigene Fisher-Yates-Funktion `shuffled()`; beim Zusammenführen in `src/utils/shuffle.js` mitnehmen (ebenso die `shuffle`-Funktion im Bilderquiz).
+- **Block 5 → Block 10 (erledigt):** `pickDistractors` gibt es jetzt zweimal: `src/utils/distractors.js` (Üben) und eine gleichartige Funktion in `GamesHub.jsx` (Block 4). Beim Aufräumen GamesHub auf die Util umstellen.
 - **Block 5 → Block 1-Notiz:** Der Artikel-/Akzent-Hinweis verlangt weiterhin „Weiter“. Bewusst so gelassen, damit man den Hinweis lesen kann; im Prüfungsmodus entfällt der Klick ohnehin.
 - **Block 5 → Block 6:** `sortByDifficulty` in `progress.js` nutzt einen Zufallsanteil im Vergleicher (inkonsistente Sortierung). Besser erst mischen, dann stabil nach Schwierigkeit sortieren.
 - **Block 5 → Block 8 (erledigt):** „TEST“-Badge in `TestExam` hat weiterhin keine Dark-Variante (steht schon in Block 8).
 - **Block 6 → Block 7 (bewusst ignoriert, laut Nutzer ist der Lernstand egal):** Der Lernstand hängt jetzt am Paar `es|de`. Wer in Block 7 deutsche Übersetzungen ändert (z. B. „gut (Adverb)“), trennt damit den bisherigen Lernstand dieses Wortes ab. Falls das stört: in `migrateProgress()` eine kleine Umbenennungstabelle alt → neu ergänzen und `PROGRESS_VERSION` erhöhen.
-- **Block 6 → Block 10:** `src/utils/darkMode.js` (tote Datei) greift noch ungeschützt auf `localStorage` zu; wird beim Löschen in Block 10 erledigt.
-- **Block 9 → Block 10:** Mehrere Komponenten haben weiterhin eigene Zurück-Knöpfe mit gleichen Klassen (`BACK_BTN` in Practice/Test, ausgeschrieben in GamesHub/VocabBrowser). Beim Aufräumen in eine gemeinsame `BackButton`-Komponente ziehen.
+- **Block 6 → Block 10 (erledigt):** `src/utils/darkMode.js` (tote Datei) greift noch ungeschützt auf `localStorage` zu; wird beim Löschen in Block 10 erledigt.
+- **Block 9 → Block 10 (erledigt):** Mehrere Komponenten haben weiterhin eigene Zurück-Knöpfe mit gleichen Klassen (`BACK_BTN` in Practice/Test, ausgeschrieben in GamesHub/VocabBrowser). Beim Aufräumen in eine gemeinsame `BackButton`-Komponente ziehen.

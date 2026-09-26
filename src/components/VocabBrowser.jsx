@@ -4,6 +4,7 @@ import { speak, ttsSupported } from '../utils/speech';
 import { getProgress, getWordStatus } from '../utils/progress';
 import FeedbackModal from './FeedbackModal';
 import FloatingBack from './FloatingBack';
+import BackButton from './BackButton';
 import { escapeHtml, openPrintWindow, POPUP_BLOCKED_MSG } from '../utils/printTest';
 
 const ALL_TAB = 'all';
@@ -118,9 +119,7 @@ export default function VocabBrowser({ selectedGrades, onBack }) {
 
       {/* Header */}
       <div className="flex items-center gap-2">
-        <button onClick={onBack} className="px-3 py-2.5 bg-rose-100 dark:bg-rose-950 hover:bg-rose-200 dark:hover:bg-rose-900 active:scale-95 text-rose-700 dark:text-rose-300 font-semibold text-sm rounded-xl transition-all flex-shrink-0">
-          ← Zurück
-        </button>
+        <BackButton onClick={onBack} compact />
         <h2 className="text-xl font-extrabold text-gray-800 dark:text-gray-100 flex-1 min-w-0 truncate max-[399px]:sr-only">Vokabeln</h2>
         <span className="flex-1 min-[400px]:hidden" aria-hidden="true" />
         <div className="flex items-center gap-1 flex-shrink-0">

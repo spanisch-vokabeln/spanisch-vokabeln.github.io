@@ -4,17 +4,15 @@
       <stop offset="0%" stop-color="#4f46e5"/>
       <stop offset="100%" stop-color="#7c3aed"/>
     </linearGradient>
+    <!-- Everything is clipped to the rounded square -->
+    <clipPath id="round"><rect width="512" height="512" rx="96"/></clipPath>
   </defs>
-  <!-- Background -->
-  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
-  <!-- Spanish flag stripe top -->
-  <rect x="0" y="0" width="512" height="72" rx="0" fill="#c60b1e" opacity="0.85"/>
-  <rect x="0" y="0" width="512" height="72" rx="96" fill="#c60b1e" opacity="0.85"/>
-  <!-- Spanish flag stripe bottom -->
-  <rect x="0" y="440" width="512" height="72" fill="#c60b1e" opacity="0.85"/>
-  <rect x="0" y="440" width="512" height="72" rx="96" fill="#c60b1e" opacity="0.85"/>
-  <!-- Yellow middle band -->
-  <rect x="0" y="72" width="512" height="368" fill="#f1bf00" opacity="0.15"/>
-  <!-- ES text -->
+  <g clip-path="url(#round)">
+    <rect width="512" height="512" fill="url(#bg)"/>
+    <!-- Spanish flag stripes -->
+    <rect x="0" y="0" width="512" height="72" fill="#c60b1e" opacity="0.85"/>
+    <rect x="0" y="440" width="512" height="72" fill="#c60b1e" opacity="0.85"/>
+    <rect x="0" y="72" width="512" height="368" fill="#f1bf00" opacity="0.15"/>
+  </g>
   <text x="256" y="320" font-family="Arial Black, Arial, sans-serif" font-size="240" font-weight="900" text-anchor="middle" fill="white" letter-spacing="-8">ES</text>
 </svg>

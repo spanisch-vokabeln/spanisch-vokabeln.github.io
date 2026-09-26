@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import FloatingBack from './FloatingBack';
+import BackButton from './BackButton';
+import { shuffle } from '../utils/shuffle';
 import { vocabByGrade, uniqueWords } from '../data/vocab';
 import { hintMessage } from '../utils/textComparison';
 import { checkAnswer } from '../utils/answerCheck';
@@ -9,11 +11,7 @@ import { pickDistractors } from '../utils/distractors';
 import { AnswerInput, AccentKeys } from './AnswerInput';
 import { useBackHandler } from '../utils/backStack';
 
-const BACK_BTN = 'px-4 py-2.5 bg-rose-100 dark:bg-rose-950 hover:bg-rose-200 dark:hover:bg-rose-900 active:scale-95 text-rose-700 dark:text-rose-300 font-semibold text-sm rounded-xl transition-all';
 
-function shuffle(arr) {
-  return [...arr].map(v => ({ v, s: Math.random() })).sort((a, b) => a.s - b.s).map(({ v }) => v);
-}
 
 // Direction is fixed per card when the deck is built (no flash of the old direction)
 const resolveDir = (direction) =>
@@ -83,7 +81,7 @@ export default function PracticeMode({ selectedGrades, onBack }) {
     <FloatingBack onClick={onBack} />
     <div className="animate-slide-up space-y-4">
       <div className="flex items-center gap-3">
-        <button onClick={onBack} className={BACK_BTN}>← Zurück</button>
+        <BackButton onClick={onBack} />
         <h2 className="text-xl font-extrabold text-gray-800 dark:text-gray-100">Üben</h2>
       </div>
 
@@ -233,7 +231,7 @@ function FlashcardMode({ words, fromMistakes, onBack }) {
   return (
     <div className="animate-slide-up space-y-4">
       <div className="flex items-center justify-between">
-        <button onClick={onBack} className={BACK_BTN}>← Zurück</button>
+        <BackButton onClick={onBack} />
         <span className="text-sm text-gray-400 font-medium">{idx + 1} / {total}</span>
         <button
           onClick={() => { setDirection(d => d === 'es2de' ? 'de2es' : 'es2de'); setRevealed(false); }}
@@ -345,7 +343,7 @@ function MultipleChoiceMode({ words, fromMistakes, onBack }) {
     return (
       <div className="animate-slide-up space-y-6">
         <div className="flex items-center justify-between">
-          <button onClick={onBack} className={BACK_BTN}>← Zurück</button>
+          <BackButton onClick={onBack} />
         </div>
         <div className="card text-center space-y-5">
           <h3 className="text-lg font-extrabold text-gray-800 dark:text-gray-100">Richtung wählen</h3>
@@ -392,7 +390,7 @@ function MultipleChoiceMode({ words, fromMistakes, onBack }) {
   return (
     <div className="animate-slide-up space-y-4">
       <div className="flex items-center justify-between">
-        <button onClick={onBack} className={BACK_BTN}>← Zurück</button>
+        <BackButton onClick={onBack} />
         <span className="text-sm text-gray-400">{idx + 1} / {total} · ✓ {score}</span>
         <span className="text-xs font-bold px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400">
           {DIR_LABELS[direction]}
@@ -494,7 +492,7 @@ function TypingMode({ words, fromMistakes, onBack }) {
     return (
       <div className="animate-slide-up space-y-6">
         <div className="flex items-center justify-between">
-          <button onClick={onBack} className={BACK_BTN}>← Zurück</button>
+          <BackButton onClick={onBack} />
         </div>
         <div className="card text-center space-y-5">
           <h3 className="text-lg font-extrabold text-gray-800 dark:text-gray-100">Richtung wählen</h3>
@@ -541,7 +539,7 @@ function TypingMode({ words, fromMistakes, onBack }) {
   return (
     <div className="animate-slide-up space-y-4">
       <div className="flex items-center justify-between">
-        <button onClick={onBack} className={BACK_BTN}>← Zurück</button>
+        <BackButton onClick={onBack} />
         <span className="text-sm text-gray-400">{idx + 1} / {total} · ✓ {score}</span>
         <span className="text-xs font-bold px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400">
           {DIR_LABELS[direction]}
@@ -739,7 +737,7 @@ function MatchingMode({ words, fromMistakes, onBack }) {
   return (
     <div className="animate-slide-up space-y-4">
       <div className="flex items-center justify-between">
-        <button onClick={onBack} className={BACK_BTN}>← Zurück</button>
+        <BackButton onClick={onBack} />
         <span className="text-sm text-gray-400">Runde {round + 1}/{totalRounds} · Fehler: {mistakes}</span>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:gap-4">
