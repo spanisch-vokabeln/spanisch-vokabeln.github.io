@@ -9,6 +9,10 @@ import { escapeHtml, openPrintWindow, POPUP_BLOCKED_MSG } from '../utils/printTe
 const ALL_TAB = 'all';
 const STATUS_COLOR = { new: '#d1d5db', good: '#22c55e', medium: '#f59e0b', hard: '#ef4444' };
 const STATUS_LABEL = { new: 'Noch nie geübt', good: 'Gut gelernt', medium: 'Mittelmäßig', hard: 'Schwierig' };
+const STATUS_SHORT = { new: 'Neu', good: 'Gut', medium: 'Mittel', hard: 'Schwer' };
+
+// Search ignores case and accents: "espanol" finds "español", "cafe" finds "café"
+const searchKey = (s) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 
 export default function VocabBrowser({ selectedGrades, onBack }) {
   const initialTab = selectedGrades.length > 1 ? ALL_TAB : selectedGrades[0];
@@ -58,11 +62,9 @@ export default function VocabBrowser({ selectedGrades, onBack }) {
     t.words.map((w, wi) => ({ ...w, topicIdx: ti, wordIdx: wi, id: `${ti}-${wi}`, color: t.color }))
   );
 
-  const filtered = search.trim()
-    ? allWords.filter(w =>
-        w.es.toLowerCase().includes(search.toLowerCase()) ||
-        w.de.toLowerCase().includes(search.toLowerCase())
-      )
+  const query = searchKey(search.trim());
+  const filtered = query
+    ? allWords.filter(w => searchKey(w.es).includes(query) || searchKey(w.de).includes(query))
     : null;
 
   const switchTab = (tab) => { setActiveTab(tab); setSearch(''); setFlipped({}); setGroupByUnidad(false); };
@@ -119,24 +121,29 @@ export default function VocabBrowser({ selectedGrades, onBack }) {
         <button onClick={onBack} className="px-3 py-2.5 bg-rose-100 dark:bg-rose-950 hover:bg-rose-200 dark:hover:bg-rose-900 active:scale-95 text-rose-700 dark:text-rose-300 font-semibold text-sm rounded-xl transition-all flex-shrink-0">
           ← Zurück
         </button>
-        <h2 className="text-xl font-extrabold text-gray-800 dark:text-gray-100 flex-1 min-w-0 truncate">Vokabeln</h2>
+        <h2 className="text-xl font-extrabold text-gray-800 dark:text-gray-100 flex-1 min-w-0 truncate max-[399px]:sr-only">Vokabeln</h2>
+        <span className="flex-1 min-[400px]:hidden" aria-hidden="true" />
         <div className="flex items-center gap-1 flex-shrink-0">
           <button onClick={handlePrint}
             className="w-9 h-9 flex items-center justify-center border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl text-sm transition-all"
-            title={filtered ? `${filtered.length} Suchtreffer drucken / PDF` : 'Alle angezeigten Wörter drucken / PDF'}>
+            title={filtered ? `${filtered.length} Suchtreffer drucken / PDF` : 'Alle angezeigten Wörter drucken / PDF'}
+            aria-label={filtered ? `${filtered.length} Suchtreffer drucken` : 'Angezeigte Wörter drucken'}>
             🖨️
           </button>
           {hasUnidades && (
             <button
-              onClick={() => setGroupByUnidad(v => !v)}
+              onClick={() => { setGroupByUnidad(v => !v); setFlipped({}); }}
+              aria-pressed={groupByUnidad}
               className={`text-xs font-bold px-2.5 py-2 rounded-xl border transition-all ${groupByUnidad ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}
-              title={groupByUnidad ? 'Nach Abschnitt gruppieren' : 'Nach Unidad gruppieren'}
+              title={groupByUnidad ? 'Wieder nach Abschnitten (Bloques) anzeigen' : 'Abschnitte einer Unidad zusammenfassen'}
             >
-              {groupByUnidad ? 'Un.' : 'Ab.'}
+              {groupByUnidad ? 'Unidad ✓' : 'Unidad'}
             </button>
           )}
           <button
             onClick={() => setShowDE(v => !v)}
+            aria-pressed={showDE}
+            title={showDE ? 'Deutsche Übersetzungen ausblenden' : 'Alle deutschen Übersetzungen zeigen'}
             className={`text-xs font-bold px-2.5 py-2 rounded-xl border transition-all ${showDE ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}
           >
             {showDE ? 'DE ✓' : 'DE ?'}
@@ -200,7 +207,7 @@ export default function VocabBrowser({ selectedGrades, onBack }) {
           {Object.entries(STATUS_COLOR).map(([k, c]) => (
             <span key={k} className="flex items-center gap-1">
               <span className="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" style={{ background: c }} />
-              <span>{STATUS_LABEL[k].split(' ')[0]}</span>
+              <span>{STATUS_SHORT[k]}</span>
             </span>
           ))}
         </div>
@@ -265,29 +272,32 @@ function WordCard({ word, showDE, flipped, onFlip, color, onReport, progress }) 
 
   return (
     <div className="bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl shadow-sm hover:border-indigo-200 dark:hover:border-indigo-500 transition-all flex flex-col"
-      style={{ borderLeftColor: color, borderLeftWidth: 3 }}
-      onClick={onFlip}>
-      <button onClick={e => { e.stopPropagation(); onFlip(); }} className="text-left p-3 w-full active:scale-95 transition-transform flex-1">
-        <div className="flex items-start gap-1">
-          <div className="text-sm font-bold text-gray-800 dark:text-gray-100 leading-tight flex-1 pr-1">{word.es}</div>
-          <div className="w-2 h-2 rounded-full flex-shrink-0 mt-1" style={{ background: dot }}
+      style={{ borderLeftColor: color, borderLeftWidth: 3 }}>
+      <button type="button" onClick={onFlip} aria-expanded={!!revealed}
+        className="text-left p-3 w-full active:scale-95 transition-transform flex-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">
+        <span className="flex items-start gap-1">
+          <span className="text-sm font-bold text-gray-800 dark:text-gray-100 leading-tight flex-1 pr-1">{word.es}</span>
+          <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1" style={{ background: dot }}
             title={STATUS_LABEL[status]} />
-        </div>
+          <span className="sr-only">({STATUS_LABEL[status]})</span>
+        </span>
         {revealed
-          ? <div className="text-xs text-gray-500 dark:text-gray-300 mt-1 leading-tight">{word.de}</div>
-          : <div className="text-xs text-gray-300 dark:text-gray-600 mt-1 select-none">• • • • •</div>}
+          ? <span className="block text-xs text-gray-500 dark:text-gray-300 mt-1 leading-tight">{word.de}</span>
+          : <span className="block text-xs text-gray-400 dark:text-gray-500 mt-1 select-none" aria-label="Übersetzung verdeckt">• • • • •</span>}
       </button>
       <div className="flex justify-end gap-1 px-1.5 pb-1.5">
         {ttsSupported && (
           <button
-            onClick={e => { e.stopPropagation(); speak(word.es, 'es-ES'); }}
+            onClick={() => speak(word.es, 'es-ES')}
+            aria-label={`${word.es} aussprechen`}
             className="w-7 h-7 flex items-center justify-center rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-950 hover:border-indigo-300 active:scale-90 transition-all text-xs"
             title="Aussprache">
             🔊
           </button>
         )}
         <button
-          onClick={e => { e.stopPropagation(); onReport(word); }}
+          onClick={() => onReport(word)}
+          aria-label={`Fehler bei ${word.es} melden`}
           className="w-7 h-7 flex items-center justify-center rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-rose-50 dark:hover:bg-rose-950 hover:border-rose-300 active:scale-90 transition-all text-xs"
           title="Fehler melden">
           🚩

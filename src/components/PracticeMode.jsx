@@ -7,6 +7,7 @@ import { recordWord, sortByDifficulty, getMistakes, addMistakes, removeMistakes,
 import { speak, ttsSupported } from '../utils/speech';
 import { pickDistractors } from '../utils/distractors';
 import { AnswerInput, AccentKeys } from './AnswerInput';
+import { useBackHandler } from '../utils/backStack';
 
 const BACK_BTN = 'px-4 py-2.5 bg-rose-100 dark:bg-rose-950 hover:bg-rose-200 dark:hover:bg-rose-900 active:scale-95 text-rose-700 dark:text-rose-300 font-semibold text-sm rounded-xl transition-all';
 
@@ -57,6 +58,9 @@ export default function PracticeMode({ selectedGrades, onBack }) {
 
   const savedMistakes = getMistakes();
   const activeWords   = mistakeMode ? savedMistakes : filteredWords;
+
+  // Back button inside an exercise returns to this menu
+  useBackHandler(mode !== null, () => setMode(null));
 
   // List emptied (all Fehlerwörter answered correctly) → back to normal mode
   useEffect(() => {
@@ -242,30 +246,30 @@ function FlashcardMode({ words, fromMistakes, onBack }) {
         <div className="h-full bg-indigo-500 transition-all duration-300 rounded-full" style={{ width: `${(idx / total) * 100}%` }} />
       </div>
 
-      <div onClick={() => setRevealed(r => !r)}
-        className="card w-full min-h-48 flex flex-col items-center justify-center text-center gap-3 cursor-pointer hover:shadow-xl transition-all active:scale-[0.98]">
-        <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">
-          {direction === 'es2de' ? 'Español' : 'Deutsch'}
-        </span>
-        <div className="flex items-center gap-2">
-          <span className="text-2xl sm:text-3xl font-extrabold text-gray-800 dark:text-gray-100">{front}</span>
-          {ttsSupported && (
-            <button onClick={e => { e.stopPropagation(); speak(front, frontLang); }}
-              className="text-xl text-gray-400 dark:text-gray-500 hover:text-indigo-500 transition-colors p-1 active:scale-90">
-              🔊
-            </button>
-          )}
-        </div>
-        {card.cat && <span className="text-xs text-indigo-400 font-medium">{card.cat}</span>}
-        {revealed ? (
-          <div className="border-t border-gray-100 dark:border-gray-700 pt-4 w-full">
-            <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
-              {direction === 'es2de' ? 'Deutsch' : 'Español'}
+      <div className="card relative w-full hover:shadow-xl transition-all">
+        <button type="button" onClick={() => setRevealed(r => !r)} aria-expanded={revealed}
+          className="w-full min-h-48 flex flex-col items-center justify-center text-center gap-3 cursor-pointer rounded-xl active:scale-[0.98] transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">
+          <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">
+            {direction === 'es2de' ? 'Español' : 'Deutsch'}
+          </span>
+          <span className="text-2xl sm:text-3xl font-extrabold text-gray-800 dark:text-gray-100 px-8">{front}</span>
+          {card.cat && <span className="text-xs text-indigo-400 font-medium">{card.cat}</span>}
+          {revealed ? (
+            <span className="block border-t border-gray-100 dark:border-gray-700 pt-4 w-full">
+              <span className="block text-xs font-bold uppercase tracking-widest text-gray-400">
+                {direction === 'es2de' ? 'Deutsch' : 'Español'}
+              </span>
+              <span className="block text-xl font-bold text-indigo-600 dark:text-indigo-300 mt-1">{back}</span>
             </span>
-            <p className="text-xl font-bold text-indigo-600 dark:text-indigo-300 mt-1">{back}</p>
-          </div>
-        ) : (
-          <p className="text-gray-400 dark:text-gray-500 text-sm">Tippen zum Aufdecken</p>
+          ) : (
+            <span className="text-gray-400 dark:text-gray-500 text-sm">Tippen zum Aufdecken</span>
+          )}
+        </button>
+        {ttsSupported && (
+          <button type="button" onClick={() => speak(front, frontLang)} aria-label="Aussprechen"
+            className="absolute top-3 right-3 text-xl text-gray-400 dark:text-gray-500 hover:text-indigo-500 transition-colors p-1 active:scale-90">
+            🔊
+          </button>
         )}
       </div>
 
@@ -404,6 +408,7 @@ function MultipleChoiceMode({ words, fromMistakes, onBack }) {
           <p className="text-2xl font-extrabold text-gray-800 dark:text-gray-100">{question}</p>
           {ttsSupported && (
             <button onClick={() => speak(question, qLang)}
+              aria-label="Aussprechen"
               className="text-xl text-gray-400 dark:text-gray-500 hover:text-emerald-500 transition-colors p-1 active:scale-90">
               🔊
             </button>
@@ -552,6 +557,7 @@ function TypingMode({ words, fromMistakes, onBack }) {
           <p className="text-2xl font-extrabold text-gray-800 dark:text-gray-100">{question}</p>
           {ttsSupported && (
             <button onClick={() => speak(question, cardDir === 'es2de' ? 'es-ES' : 'de-DE')}
+              aria-label="Aussprechen"
               className="text-xl text-gray-400 dark:text-gray-500 hover:text-amber-500 transition-colors p-1 active:scale-90">
               🔊
             </button>

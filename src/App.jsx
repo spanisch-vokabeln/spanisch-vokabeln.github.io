@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import HomePage    from './components/HomePage';
 import VocabBrowser from './components/VocabBrowser';
 import PracticeMode from './components/PracticeMode';
@@ -7,10 +7,20 @@ import GamesHub     from './components/GamesHub';
 import FeedbackModal from './components/FeedbackModal';
 import { useDark } from './utils/darkMode.jsx';
 import { GRADE_ORDER, sortGrades } from './data/vocab';
+import { storageGetJSON, storageSetJSON } from './utils/storage';
+import { useBackHandler } from './utils/backStack';
+
+const GRADES_KEY = 'selected_grades';
+
+// Remembered grade selection; unknown values (e.g. from older versions) are dropped
+function loadGrades() {
+  const saved = storageGetJSON(GRADES_KEY, []);
+  return Array.isArray(saved) ? sortGrades(GRADE_ORDER.filter(g => saved.includes(g))) : [];
+}
 
 export default function App() {
   const [view, setView]                   = useState('home');
-  const [selectedGrades, setSelectedGrades] = useState([]);
+  const [selectedGrades, setSelectedGrades] = useState(loadGrades);
   const [showFeedback, setShowFeedback]   = useState(false);
   const { dark, setDark } = useDark();
 
@@ -20,10 +30,15 @@ export default function App() {
   const selectAll  = () => setSelectedGrades([...GRADE_ORDER]);
   const clearAll   = () => setSelectedGrades([]);
 
+  useEffect(() => { storageSetJSON(GRADES_KEY, selectedGrades); }, [selectedGrades]);
+
   const goTo = (target) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setView(target);
   };
+
+  // Browser/phone back from a sub-page returns to the home page
+  useBackHandler(view !== 'home', () => goTo('home'));
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--app-bg)' }}>

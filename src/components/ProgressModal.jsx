@@ -1,4 +1,5 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useId } from 'react';
+import { useDialog } from '../utils/useDialog';
 import { createPortal } from 'react-dom';
 import { downloadProgress, importData, getProgressSummary } from '../utils/backup';
 import { clearProgress } from '../utils/progress';
@@ -8,6 +9,8 @@ export default function ProgressModal({ onClose }) {
   const [error, setError] = useState('');
   const [confirmReset, setConfirmReset] = useState(false);
   const fileRef = useRef();
+  const panelRef = useDialog(onClose);
+  const titleId = useId();
   const summary = getProgressSummary();
 
   const handleFile = (e) => {
@@ -41,12 +44,13 @@ export default function ProgressModal({ onClose }) {
       className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-50"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5 animate-slide-up">
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}
+        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5 animate-slide-up max-h-[90vh] overflow-y-auto focus:outline-none">
 
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h3 className="font-extrabold text-gray-800 dark:text-gray-100 text-lg">📊 Lernstand sichern</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl leading-none">×</button>
+          <h3 id={titleId} className="font-extrabold text-gray-800 dark:text-gray-100 text-lg">📊 Lernstand sichern</h3>
+          <button onClick={onClose} aria-label="Schließen" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl leading-none">×</button>
         </div>
 
         {/* Explanation */}

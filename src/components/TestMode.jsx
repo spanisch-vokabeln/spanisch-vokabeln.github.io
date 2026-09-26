@@ -8,6 +8,8 @@ import { recordWord, addMistakes } from '../utils/progress';
 import { speak, ttsSupported } from '../utils/speech';
 import { generatePrintTest, formatGradeLabel, openPrintWindow, POPUP_BLOCKED_MSG } from '../utils/printTest';
 import { AnswerInput, AccentKeys } from './AnswerInput';
+import ConfirmDialog from './ConfirmDialog';
+import { useBackHandler } from '../utils/backStack';
 
 const BACK_BTN = 'px-4 py-2.5 bg-rose-100 dark:bg-rose-950 hover:bg-rose-200 dark:hover:bg-rose-900 active:scale-95 text-rose-700 dark:text-rose-300 font-semibold text-sm rounded-xl transition-all';
 
@@ -64,6 +66,9 @@ export default function TestMode({ selectedGrades, onBack }) {
     setResults(res);
     setPhase('result');
   };
+
+  // Back from the result page returns to the setup
+  useBackHandler(phase === 'result', () => setPhase('setup'));
 
   if (phase === 'test') {
     return <TestExam words={testWords} examMode={config.feedback === 'end'} onFinish={handleFinish} onCancel={() => setPhase('setup')} />;
@@ -263,6 +268,9 @@ function TestExam({ words, examMode, onFinish, onCancel }) {
     if (feedback && feedback.isCorrect && !feedback.hint) proceed();
   };
 
+  // Back button during the test asks before leaving
+  useBackHandler(true, () => { openExit(); return false; });
+
   const question = word.dir === 'es2de' ? word.es : word.de;
   const qLabel   = word.dir === 'es2de' ? '🇪🇸 Español' : '🇩🇪 Deutsch';
   const aLabel   = word.dir === 'es2de' ? 'Deutsch' : 'Español';
@@ -286,6 +294,7 @@ function TestExam({ words, examMode, onFinish, onCancel }) {
           <p className="text-2xl sm:text-3xl font-extrabold text-gray-800 dark:text-gray-100">{question}</p>
           {ttsSupported && (
             <button onClick={() => speak(question, qLang)}
+              aria-label="Aussprechen"
               className="text-xl text-gray-400 dark:text-gray-500 hover:text-amber-500 transition-colors p-1 active:scale-90">
               🔊
             </button>
@@ -332,17 +341,14 @@ function TestExam({ words, examMode, onFinish, onCancel }) {
       </div>
 
       {showExit && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-sm w-full shadow-2xl text-center space-y-4">
-            <div className="text-4xl">⚠️</div>
-            <h3 className="text-xl font-bold dark:text-gray-100">Test abbrechen?</h3>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">Der aktuelle Fortschritt geht verloren.</p>
-            <div className="flex gap-3 justify-center">
-              <button onClick={() => { clearTimer(); onCancel(); }} className="btn bg-red-500 hover:bg-red-600 text-white">Ja, abbrechen</button>
-              <button onClick={closeExit} className="btn btn-outline">Weitermachen</button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title="Test abbrechen?"
+          text="Der aktuelle Fortschritt geht verloren."
+          confirmLabel="Ja, abbrechen"
+          cancelLabel="Weitermachen"
+          onConfirm={() => { clearTimer(); onCancel(); }}
+          onCancel={closeExit}
+        />
       )}
     </div>
   );

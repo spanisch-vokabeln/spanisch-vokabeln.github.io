@@ -133,7 +133,7 @@ export default function HomePage({ selectedGrades, onToggleGrade, onSelectAll, o
               onClick={() => setShowHard(true)}
               className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-amber-50 dark:hover:bg-amber-950 hover:border-amber-300 dark:text-gray-300 transition-all flex-shrink-0"
             >
-              📋
+              📋 Wiederholen
             </button>
           )}
           <button
@@ -217,24 +217,25 @@ function ActionCard({ icon, title, desc, color, disabled, onClick }) {
   const c = colors[color];
 
   return (
-    <div
-      className={`card p-3.5 flex flex-col justify-between transition-all duration-300 ${disabled ? 'opacity-50' : 'hover:shadow-xl cursor-pointer'}`}
-      onClick={disabled ? undefined : onClick}
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={`card p-3.5 w-full text-left flex flex-col justify-between transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-xl cursor-pointer active:scale-[0.98]'}`}
       style={{ background: c.bg, borderColor: disabled ? undefined : c.border }}
     >
-      <div>
-        <div className="text-2xl mb-1.5">{icon}</div>
-        <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm mb-0.5 leading-tight">{title}</h3>
-        <p className="text-gray-500 dark:text-gray-400 text-[11px] leading-snug line-clamp-2">{desc}</p>
-      </div>
-      <button
-        disabled={disabled}
-        tabIndex={-1}
-        className={`mt-3 btn text-xs text-white py-2 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+      <span className="block">
+        <span className="block text-2xl mb-1.5" aria-hidden="true">{icon}</span>
+        <span className="block font-bold text-gray-800 dark:text-gray-100 text-sm mb-0.5 leading-tight">{title}</span>
+        <span className="block text-gray-500 dark:text-gray-400 text-[11px] leading-snug line-clamp-2">{desc}</span>
+      </span>
+      {/* Looks like a button; the whole card is the actual button */}
+      <span
+        className={`mt-3 btn w-full text-xs text-white py-2 ${disabled ? 'opacity-50' : ''}`}
         style={{ background: disabled ? '#9ca3af' : c.btnBg }}
       >
         {disabled ? 'Klasse wählen' : 'Los geht\'s →'}
-      </button>
-    </div>
+      </span>
+    </button>
   );
 }

@@ -3,6 +3,8 @@ import { buildWordPool, vocabByGrade } from '../data/vocab';
 import { bilderquizThemes } from '../data/bilderquiz';
 import FloatingBack from './FloatingBack';
 import { storageGet, storageSet } from '../utils/storage';
+import { useBackHandler } from '../utils/backStack';
+import ConfirmDialog from './ConfirmDialog';
 
 // ─── Games Hub Menu ──────────────────────────────────────────────────────────
 export default function GamesHub({ selectedGrades, onBack }) {
@@ -163,6 +165,13 @@ function ArcadeGame({ type, wordPool, highscore, onSave, onBack }) {
   const [fbShow, setFbShow]      = useState(false);
   const [newRecord, setNewRecord] = useState(false);
   const [showExit, setShowExit]  = useState(false);
+
+  // Back button: ask while playing, leave directly on the result screen
+  useBackHandler(true, () => {
+    if (overRef.current) { onBack(); return; }
+    setShowExit(true);
+    return false;
+  });
 
   // Refs hold the live game values so timers never read stale state
   const speedRef   = useRef(SURVIVAL_START_MS);
@@ -372,17 +381,14 @@ function ArcadeGame({ type, wordPool, highscore, onSave, onBack }) {
       </div>
 
       {showExit && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-sm w-full shadow-2xl text-center space-y-4">
-            <div className="text-4xl">⚠️</div>
-            <h3 className="text-xl font-bold dark:text-gray-100">¿Abandonar el juego?</h3>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">Aktuelle Punkte gehen verloren. Rekorde bleiben gespeichert.</p>
-            <div className="flex gap-3 justify-center">
-              <button onClick={onBack} className="btn bg-red-500 hover:bg-red-600 text-white">Sí, salir</button>
-              <button onClick={() => setShowExit(false)} className="btn btn-outline">Weiterspielen</button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title="¿Abandonar el juego?"
+          text="Aktuelle Punkte gehen verloren. Rekorde bleiben gespeichert."
+          confirmLabel="Sí, salir"
+          cancelLabel="Weiterspielen"
+          onConfirm={onBack}
+          onCancel={() => setShowExit(false)}
+        />
       )}
     </div>
   );
@@ -392,6 +398,8 @@ function ArcadeGame({ type, wordPool, highscore, onSave, onBack }) {
 function BilderquizView({ highscore, onSave, onBack }) {
   const [theme, setTheme] = useState(null);
   const [tick, setTick]   = useState(0);
+
+  useBackHandler(true, onBack);
 
   if (theme) {
     return (
@@ -447,6 +455,7 @@ function BilderquizView({ highscore, onSave, onBack }) {
 }
 
 function BilderquizGame({ theme, highscore, onSave, onExit }) {
+  useBackHandler(true, onExit);
   const bestKey = `bq_${theme.id}`;
   const shuffle = (arr) => [...arr].map(v => ({ v, s: Math.random() })).sort((a, b) => a.s - b.s).map(({ v }) => v);
 

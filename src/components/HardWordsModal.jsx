@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useId } from 'react';
+import { useDialog } from '../utils/useDialog';
 import { createPortal } from 'react-dom';
 import { vocabByGrade } from '../data/vocab';
 import { getProgress, getWordStatus, wordKey } from '../utils/progress';
@@ -9,6 +10,8 @@ const STATUS_CONFIG = {
 };
 
 export default function HardWordsModal({ selectedGrades, onClose }) {
+  const panelRef = useDialog(onClose);
+  const titleId = useId();
   const words = useMemo(() => {
     const grades = selectedGrades.length > 0 ? selectedGrades : Object.keys(vocabByGrade);
     const progress = getProgress();
@@ -30,14 +33,14 @@ export default function HardWordsModal({ selectedGrades, onClose }) {
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       onClick={onClose}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-      <div
-        className="relative w-full sm:max-w-lg bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[85vh]"
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}
+        className="relative w-full sm:max-w-lg bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[85vh] focus:outline-none"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
           <div>
-            <h2 className="text-base font-bold text-gray-800 dark:text-gray-100">
+            <h2 id={titleId} className="text-base font-bold text-gray-800 dark:text-gray-100">
               Wörter zum Wiederholen
             </h2>
             <p className="text-xs text-gray-400 mt-0.5">
@@ -46,7 +49,7 @@ export default function HardWordsModal({ selectedGrades, onClose }) {
                 : `${total} Wörter brauchen noch Übung`}
             </p>
           </div>
-          <button onClick={onClose}
+          <button onClick={onClose} aria-label="Schließen"
             className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all text-lg">
             ×
           </button>

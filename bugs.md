@@ -23,7 +23,7 @@ Ergebnis des Audits vom 26.09.2026. Jeder Block ist so geschrieben, dass er **in
 | 6 | Lernstand, Fehlerwörter & Backup | 🟠 Bug | 2 | ✅ |
 | 7 | Vokabeldaten & Klassen-Bezeichnungen | 🟠 Bug | 1 | ✅ |
 | 8 | CSS, Schrift & Dunkelmodus | 🟠 Bug | – | ✅ |
-| 9 | Navigation & Bedienbarkeit | 🟡 UX | 5, 8 | ⬜ |
+| 9 | Navigation & Bedienbarkeit | 🟡 UX | 5, 8 | ✅ |
 | 10 | PWA, Aufräumen & Abhängigkeiten | ⚪ Technik | – | ⬜ |
 
 Die Blöcke 1–4 sind unabhängig voneinander und können in beliebiger Reihenfolge laufen.
@@ -283,25 +283,27 @@ Wer 94 % hat, sieht im Schlüssel eine 2, bekommt aber eine 1.
 **Dateien:** `src/App.jsx` und die Komponenten
 
 **Aufgaben**
-- [ ] **Browser-/Handy-Zurück:** Die App nutzt keine History. Die Zurück-Geste bzw. -Taste unter Android schließt die ganze App.
-  - [ ] Ansichten per `history.pushState` / `popstate` abbilden (oder Hash-Routing `#/practice` usw.).
-  - [ ] Unteransichten (Übungsmodus, Spiel, Test) ebenfalls einbeziehen.
-  - [ ] Bei laufendem Test bzw. Spiel den Abbruch-Dialog zeigen statt sofort zu verlassen.
-- [ ] Klassenauswahl in `localStorage` merken; sie ist nach dem Neuladen weg.
-- [ ] **Dialoge** (`FeedbackModal`, `ProgressModal`, `HardWordsModal`, Abbruch-Dialoge):
-  - [ ] Schließen mit Esc;
-  - [ ] Fokus in den Dialog setzen;
-  - [ ] `role="dialog" aria-modal`;
-  - [ ] Hintergrund nicht scrollen lassen.
-- [ ] **Tastaturbedienung:** `ActionCard` auf der Startseite ist ein `div` mit `onClick`, der innere Button hat `tabIndex={-1}`. Das ganze Element zum Button machen. Dasselbe prüfen für `WordCard` (verschachtelte Buttons) und die Karteikarte.
-- [ ] Icon-Buttons (🔊, 🚩, 🖨️, 📋, ×) mit `aria-label` versehen.
-- [ ] **Vokabelliste (`VocabBrowser.jsx`):**
-  - [ ] Suche akzent-unabhängig machen („espanol“ findet „español“).
-  - [ ] Legende zeigt „Noch“ statt „Neu“: Zeile ~184 schneidet das Label beim Leerzeichen ab. Eigene Kurzlabels verwenden.
-  - [ ] Knöpfe „Ab.“ / „Un.“ verständlich beschriften, z. B. „Nach Unidad gruppieren“; der `title` ist derzeit invertiert.
-  - [ ] Beim Umschalten der Gruppierung `flipped` zurücksetzen, sonst sind falsche Karten aufgedeckt.
-- [ ] Knopf „📋“ auf der Startseite hat keinen Text. Beschriften, z. B. „Wiederholen“.
-- [ ] `FeedbackModal`: `navigator.clipboard` braucht einen Fehler-Fallback (unsicherer Kontext oder abgelehnt).
+- [x] **Browser-/Handy-Zurück:** Die App nutzt keine History. Die Zurück-Geste bzw. -Taste unter Android schließt die ganze App.
+  - [x] Ansichten per `history.pushState` / `popstate` abbilden (oder Hash-Routing `#/practice` usw.).
+  - [x] Unteransichten (Übungsmodus, Spiel, Test) ebenfalls einbeziehen.
+  - [x] Bei laufendem Test bzw. Spiel den Abbruch-Dialog zeigen statt sofort zu verlassen.
+- [x] Klassenauswahl in `localStorage` merken; sie ist nach dem Neuladen weg.
+- [x] **Dialoge** (`FeedbackModal`, `ProgressModal`, `HardWordsModal`, Abbruch-Dialoge):
+  - [x] Schließen mit Esc;
+  - [x] Fokus in den Dialog setzen;
+  - [x] `role="dialog" aria-modal`;
+  - [x] Hintergrund nicht scrollen lassen.
+- [x] **Tastaturbedienung:** `ActionCard` auf der Startseite ist ein `div` mit `onClick`, der innere Button hat `tabIndex={-1}`. Das ganze Element zum Button machen. Dasselbe prüfen für `WordCard` (verschachtelte Buttons) und die Karteikarte.
+- [x] Icon-Buttons (🔊, 🚩, 🖨️, 📋, ×) mit `aria-label` versehen.
+- [x] **Vokabelliste (`VocabBrowser.jsx`):**
+  - [x] Suche akzent-unabhängig machen („espanol“ findet „español“).
+  - [x] Legende zeigt „Noch“ statt „Neu“: Zeile ~184 schneidet das Label beim Leerzeichen ab. Eigene Kurzlabels verwenden.
+  - [x] Knöpfe „Ab.“ / „Un.“ verständlich beschriften, z. B. „Nach Unidad gruppieren“; der `title` ist derzeit invertiert.
+  - [x] Beim Umschalten der Gruppierung `flipped` zurücksetzen, sonst sind falsche Karten aufgedeckt.
+- [x] Knopf „📋“ auf der Startseite hat keinen Text. Beschriften, z. B. „Wiederholen“.
+- [x] `FeedbackModal`: `navigator.clipboard` braucht einen Fehler-Fallback (unsicherer Kontext oder abgelehnt).
+
+**Umgesetzt (26.09.2026):** `src/utils/backStack.js` (`useBackHandler`): Jede offene Ebene (Seite, Übungsmodus, Spiel, Bilderquiz-Thema, Testergebnis, Dialog) besitzt einen History-Eintrag; Zurück ruft den obersten Handler. Gibt er `false` zurück (laufender Test/Spiel → Abbruch-Dialog), bleibt die Ebene offen und der Eintrag wird neu gesetzt. Wird eine Ebene über die Oberfläche geschlossen, wird ihr Eintrag per `history.go()` entfernt (mehrere gebündelt; schließt und öffnet sich im selben Render etwas, wird der Eintrag weiterverwendet). Übrig gebliebene Einträge nach einem Neuladen werden übersprungen. Klassenauswahl liegt in `localStorage` (`selected_grades`). `src/utils/useDialog.js`: Esc (nur oberster Dialog), Zurück-Taste, Fokus in den Dialog + Tab-Falle, Fokus zurück, Scroll-Sperre; genutzt von Feedback-, Lernstand- und Wiederholen-Dialog und dem neuen `ConfirmDialog` (Test abbrechen, ¿Abandonar el juego?; `role="alertdialog"`, Fokus auf „Weitermachen“). ActionCard ist ein `<button>`, WordCard hat keinen Klick-Handler auf dem Container mehr, die Karteikarte ist ein Button mit 🔊 daneben statt darin. Icon-Knöpfe haben `aria-label`, „📋 Wiederholen“ ist beschriftet. Vokabelliste: akzent-/groß-klein-unabhängige Suche, Legende „Neu/Gut/Mittel/Schwer“, Umschalter „Unidad“ / „Unidad ✓“ (mit `aria-pressed` und passendem `title`), Umschalten setzt aufgedeckte Karten zurück; Titel wird unter 400 px nur für Screenreader angezeigt. Zwischenablage: Fallback über `execCommand`, sonst wird die Adresse markiert und ein Hinweis angezeigt. Im Browser geprüft (375 px): Zurück durch Üben/Karteikarte/Start, UI-Zurück + Geräte-Zurück ohne „tote“ Klicks, Test (Zurück → Dialog → Zurück schließt Dialog → Abbrechen), Contrarreloj, Bilderquiz, Dialoge per Zurück/Esc, Neuladen behält Klassen.
 
 ---
 
@@ -336,3 +338,4 @@ _(Hier tragen Sitzungen Funde außerhalb ihres Blocks ein.)_
 - **Block 5 → Block 8 (erledigt):** „TEST“-Badge in `TestExam` hat weiterhin keine Dark-Variante (steht schon in Block 8).
 - **Block 6 → Block 7 (bewusst ignoriert, laut Nutzer ist der Lernstand egal):** Der Lernstand hängt jetzt am Paar `es|de`. Wer in Block 7 deutsche Übersetzungen ändert (z. B. „gut (Adverb)“), trennt damit den bisherigen Lernstand dieses Wortes ab. Falls das stört: in `migrateProgress()` eine kleine Umbenennungstabelle alt → neu ergänzen und `PROGRESS_VERSION` erhöhen.
 - **Block 6 → Block 10:** `src/utils/darkMode.js` (tote Datei) greift noch ungeschützt auf `localStorage` zu; wird beim Löschen in Block 10 erledigt.
+- **Block 9 → Block 10:** Mehrere Komponenten haben weiterhin eigene Zurück-Knöpfe mit gleichen Klassen (`BACK_BTN` in Practice/Test, ausgeschrieben in GamesHub/VocabBrowser). Beim Aufräumen in eine gemeinsame `BackButton`-Komponente ziehen.
