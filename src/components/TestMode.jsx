@@ -3,7 +3,7 @@ import FloatingBack from './FloatingBack';
 import { vocabByGrade } from '../data/vocab';
 import { GRADE_SCALE, getGradeForPoints } from '../utils/grading';
 import { compareAnswers, hintMessage } from '../utils/textComparison';
-import { recordWord, setMistakes } from '../utils/progress';
+import { recordWord, addMistakes } from '../utils/progress';
 import { speak, ttsSupported } from '../utils/speech';
 import { generatePrintTest, formatGradeLabel, openPrintWindow, POPUP_BLOCKED_MSG } from '../utils/printTest';
 import { AnswerInput, AccentKeys } from './AnswerInput';
@@ -58,8 +58,8 @@ export default function TestMode({ selectedGrades, onBack }) {
   };
 
   const handleFinish = (res) => {
-    res.forEach(r => recordWord(r.word.es, r.isCorrect));
-    setMistakes(res.filter(r => !r.isCorrect).map(r => r.word));
+    res.forEach(r => recordWord(r.word, r.isCorrect));
+    addMistakes(res.filter(r => !r.isCorrect).map(r => r.word));
     setResults(res);
     setPhase('result');
   };

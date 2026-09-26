@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { downloadProgress, importData, getProgressSummary } from '../utils/backup';
+import { clearProgress } from '../utils/progress';
 
 export default function ProgressModal({ onClose }) {
   const [imported, setImported] = useState(false);
@@ -15,21 +16,23 @@ export default function ProgressModal({ onClose }) {
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
-        const data = JSON.parse(ev.target.result);
+        let data;
+        try { data = JSON.parse(ev.target.result); }
+        catch { throw new Error('Die Datei ist keine gültige Lernstand-Datei'); }
         importData(data);
         setImported(true);
         setError('');
         setTimeout(() => window.location.reload(), 1200);
-      } catch {
-        setError('Die Datei konnte nicht gelesen werden. Bitte wähle eine gültige Lernstand-Datei.');
+      } catch (err) {
+        setError(`${err.message || 'Die Datei konnte nicht gelesen werden'}. Dein bisheriger Lernstand wurde nicht verändert.`);
       }
+      e.target.value = '';
     };
     reader.readAsText(file);
   };
 
   const handleReset = () => {
-    localStorage.removeItem('vocab_progress');
-    localStorage.removeItem('vocab_mistakes');
+    clearProgress();
     window.location.reload();
   };
 
@@ -105,7 +108,7 @@ export default function ProgressModal({ onClose }) {
         <div className="pt-1 border-t border-gray-100">
           {confirmReset ? (
             <div className="flex gap-2">
-              <p className="text-xs text-gray-500 flex-1">Wirklich alles löschen?</p>
+              <p className="text-xs text-gray-500 flex-1">Lernstand und Fehlerwörter löschen? Spielrekorde bleiben.</p>
               <button onClick={handleReset} className="text-xs text-red-500 font-semibold hover:underline">Ja, löschen</button>
               <button onClick={() => setConfirmReset(false)} className="text-xs text-gray-400 hover:underline">Abbrechen</button>
             </div>
@@ -114,7 +117,7 @@ export default function ProgressModal({ onClose }) {
               onClick={() => setConfirmReset(true)}
               className="text-xs text-gray-300 hover:text-red-400 transition-colors w-full text-center"
             >
-              Fortschritt zurücksetzen
+              Lernstand zurücksetzen (Spielrekorde bleiben erhalten)
             </button>
           )}
         </div>

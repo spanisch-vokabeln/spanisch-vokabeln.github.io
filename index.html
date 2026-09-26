@@ -3,7 +3,8 @@
   <head>
     <script>
       (function(){
-        var t=localStorage.getItem('theme');
+        var t=null;
+        try{t=localStorage.getItem('theme');}catch(e){}
         var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;
         if(d)document.documentElement.setAttribute('data-theme','dark');
       })();

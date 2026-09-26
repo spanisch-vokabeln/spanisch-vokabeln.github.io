@@ -20,7 +20,7 @@ Ergebnis des Audits vom 26.09.2026. Jeder Block ist so geschrieben, dass er **in
 | 3 | Notenschlüssel & Druckansichten | 🔴 kritisch | – | ✅ |
 | 4 | Spiele (Arcade & Bilderquiz) | 🟠 Bug | – | ✅ |
 | 5 | Üben- & Test-Ablauf | 🟠 Bug | 1 | ✅ |
-| 6 | Lernstand, Fehlerwörter & Backup | 🟠 Bug | 2 | ⬜ |
+| 6 | Lernstand, Fehlerwörter & Backup | 🟠 Bug | 2 | ✅ |
 | 7 | Vokabeldaten & Klassen-Bezeichnungen | 🟠 Bug | 1 | ⬜ |
 | 8 | CSS, Schrift & Dunkelmodus | 🟠 Bug | – | ⬜ |
 | 9 | Navigation & Bedienbarkeit | 🟡 UX | 5, 8 | ⬜ |
@@ -196,23 +196,25 @@ Wer 94 % hat, sieht im Schlüssel eine 2, bekommt aber eine 1.
 **Dateien:** `src/utils/progress.js`, `src/utils/backup.js`, `src/components/VocabBrowser.jsx`, `src/components/HardWordsModal.jsx`, `src/components/HomePage.jsx`, `src/components/ProgressModal.jsx`
 
 **Aufgaben**
-- [ ] **Einheitliche Einstufung:** `getWordStatus` (progress.js: gut ab 75 % und 3 Versuchen) und `getProgressSummary` (backup.js: gut ab 80 % und 3× richtig) unterscheiden sich. Eine gemeinsame Funktion verwenden.
-- [ ] **Fortschritts-Schlüssel:** Der Lernstand wird nur per spanischem Wort gespeichert. 112 Wörter haben aber je nach Klasse verschiedene Bedeutungen, z. B. `el tiempo` = Zeit oder Wetter, `como` = wie oder da/weil. Schlüssel auf `es|de` umstellen. **Migration** bestehender Daten: alte Einträge auf alle passenden neuen Schlüssel übertragen. Bestehende Lernstände dürfen nicht verloren gehen!
-- [ ] **Fehlerwörter:**
-  - [ ] nicht bei jeder Runde komplett überschreiben, sondern zusammenführen;
-  - [ ] ein Wort erst entfernen, wenn es im Fehlerwörter-Modus richtig beantwortet wurde;
-  - [ ] bei Abbruch mitten in der Runde die bisherigen Fehler trotzdem speichern;
-  - [ ] Duplikate vermeiden.
-- [ ] Text „Wörter aus letzter Session“ in `PracticeMode.jsx` entsprechend anpassen.
-- [ ] Bleibt man nach dem Leeren der Fehlerliste im Fehlerwörter-Modus hängen, automatisch in den Normalmodus zurückspringen.
-- [ ] **Leistung:** `WordCard` in `VocabBrowser.jsx` ruft `getWordStatus` pro Karte auf, und das liest jedes Mal den ganzen Lernstand aus localStorage. Bei „Alle“ sind das über 2.600 Mal pro Tastendruck in der Suche. Lernstand einmal pro Render laden und herunterreichen. Dasselbe in `HardWordsModal.jsx`.
-- [ ] **HardWordsModal:** Wörter deduplizieren (gleiche Wörter aus mehreren Themen bzw. Klassen erscheinen doppelt).
-- [ ] **Backup:**
-  - [ ] Bilderquiz-Rekorde (`bq_*`) mit exportieren und importieren;
-  - [ ] beim Import das Format prüfen (`vocab_progress` muss ein Objekt sein, `vocab_mistakes` ein Array);
-  - [ ] „Fortschritt zurücksetzen“ klar beschriften: löscht es auch Spielrekorde oder nicht?
-- [ ] `downloadProgress`: `URL.revokeObjectURL` erst verzögert aufrufen (Safari/Firefox brechen sonst manchmal den Download ab). Dateiname ohne `ñ`.
-- [ ] Alle `localStorage`-Zugriffe (inkl. Inline-Skript in `index.html` und `darkMode.jsx`) in `try/catch` einpacken. Im privaten Modus bzw. bei voll belegtem Speicher stürzt die App sonst ab.
+- [x] **Einheitliche Einstufung:** `getWordStatus` (progress.js: gut ab 75 % und 3 Versuchen) und `getProgressSummary` (backup.js: gut ab 80 % und 3× richtig) unterscheiden sich. Eine gemeinsame Funktion verwenden.
+- [x] **Fortschritts-Schlüssel:** Der Lernstand wird nur per spanischem Wort gespeichert. 112 Wörter haben aber je nach Klasse verschiedene Bedeutungen, z. B. `el tiempo` = Zeit oder Wetter, `como` = wie oder da/weil. Schlüssel auf `es|de` umstellen. **Migration** bestehender Daten: alte Einträge auf alle passenden neuen Schlüssel übertragen. Bestehende Lernstände dürfen nicht verloren gehen!
+- [x] **Fehlerwörter:**
+  - [x] nicht bei jeder Runde komplett überschreiben, sondern zusammenführen;
+  - [x] ein Wort erst entfernen, wenn es im Fehlerwörter-Modus richtig beantwortet wurde;
+  - [x] bei Abbruch mitten in der Runde die bisherigen Fehler trotzdem speichern;
+  - [x] Duplikate vermeiden.
+- [x] Text „Wörter aus letzter Session“ in `PracticeMode.jsx` entsprechend anpassen.
+- [x] Bleibt man nach dem Leeren der Fehlerliste im Fehlerwörter-Modus hängen, automatisch in den Normalmodus zurückspringen.
+- [x] **Leistung:** `WordCard` in `VocabBrowser.jsx` ruft `getWordStatus` pro Karte auf, und das liest jedes Mal den ganzen Lernstand aus localStorage. Bei „Alle“ sind das über 2.600 Mal pro Tastendruck in der Suche. Lernstand einmal pro Render laden und herunterreichen. Dasselbe in `HardWordsModal.jsx`.
+- [x] **HardWordsModal:** Wörter deduplizieren (gleiche Wörter aus mehreren Themen bzw. Klassen erscheinen doppelt).
+- [x] **Backup:**
+  - [x] Bilderquiz-Rekorde (`bq_*`) mit exportieren und importieren;
+  - [x] beim Import das Format prüfen (`vocab_progress` muss ein Objekt sein, `vocab_mistakes` ein Array);
+  - [x] „Fortschritt zurücksetzen“ klar beschriften: löscht es auch Spielrekorde oder nicht?
+- [x] `downloadProgress`: `URL.revokeObjectURL` erst verzögert aufrufen (Safari/Firefox brechen sonst manchmal den Download ab). Dateiname ohne `ñ`.
+- [x] Alle `localStorage`-Zugriffe (inkl. Inline-Skript in `index.html` und `darkMode.jsx`) in `try/catch` einpacken. Im privaten Modus bzw. bei voll belegtem Speicher stürzt die App sonst ab.
+
+**Umgesetzt (26.09.2026):** Lernstand liegt jetzt unter `es|de` (`wordKey`), Marker `vocab_progress_version = 2`. `migrateProgress()` kopiert jeden alten Eintrag auf **alle** Paare mit diesem spanischen Wort; Einträge zu Wörtern, die es nicht mehr gibt, landen in `vocab_progress_legacy` statt verloren zu gehen. Die Migration läuft einmal beim ersten Lesen und auch beim Import alter Backups (Version 1). Eine Einstufung für alles: `classifyEntry()` in `progress.js` (Werte von `getWordStatus`: gut ab 75 % bei ≥ 3 Versuchen); `getProgressSummary` nutzt sie und zählt Legacy-Einträge nicht mit. Fehlerwörter: `trackMistake()` nach jeder Antwort – falsch → sofort hinzufügen (Abbruch verliert nichts), richtig → nur im Fehlerwörter-Modus entfernen; `getMistakes()` dedupliziert, gespeichert wird nur `es`/`de`/`cat`. Test fügt Fehler am Ende hinzu statt zu überschreiben. Leere Fehlerliste → Fehlerwörter-Modus schaltet sich ab. VocabBrowser/HardWordsModal lesen den Lernstand einmal (`getWordStatus(word, progress)`), HardWordsModal dedupliziert. Backup: Version 2, exportiert `gm_*` und `bq_*` (und ggf. Legacy), Import prüft erst alles und schreibt dann (bei Fehler bleibt der alte Stand). „Lernstand zurücksetzen (Spielrekorde bleiben erhalten)“ über `clearProgress()`. Download mit verzögertem `revokeObjectURL`, Dateiname `espanol-lernstand-DATUM.json`. Alle `localStorage`-Zugriffe laufen über `src/utils/storage.js` (try/catch), Inline-Skript in `index.html` ebenfalls abgesichert. `sortByDifficulty` mischt zuerst und sortiert dann stabil (Notiz aus Block 5). Geprüft: Node-Test mit altem Format (el tiempo → Zeit **und** Wetter, unbekanntes Wort → Legacy), ungültige Backups werden abgelehnt ohne Datenverlust; im Browser echter Altbestand 817 Einträge → 916 Paare, 0 Legacy; Fehlerwörter-Durchlauf, Abbruch mitten in der Runde, automatischer Rücksprung.
 
 ---
 
@@ -326,3 +328,5 @@ _(Hier tragen Sitzungen Funde außerhalb ihres Blocks ein.)_
 - **Block 5 → Block 1-Notiz:** Der Artikel-/Akzent-Hinweis verlangt weiterhin „Weiter“. Bewusst so gelassen, damit man den Hinweis lesen kann; im Prüfungsmodus entfällt der Klick ohnehin.
 - **Block 5 → Block 6:** `sortByDifficulty` in `progress.js` nutzt einen Zufallsanteil im Vergleicher (inkonsistente Sortierung). Besser erst mischen, dann stabil nach Schwierigkeit sortieren.
 - **Block 5 → Block 8:** „TEST“-Badge in `TestExam` hat weiterhin keine Dark-Variante (steht schon in Block 8).
+- **Block 6 → Block 7:** Der Lernstand hängt jetzt am Paar `es|de`. Wer in Block 7 deutsche Übersetzungen ändert (z. B. „gut (Adverb)“), trennt damit den bisherigen Lernstand dieses Wortes ab. Falls das stört: in `migrateProgress()` eine kleine Umbenennungstabelle alt → neu ergänzen und `PROGRESS_VERSION` erhöhen.
+- **Block 6 → Block 10:** `src/utils/darkMode.js` (tote Datei) greift noch ungeschützt auf `localStorage` zu; wird beim Löschen in Block 10 erledigt.

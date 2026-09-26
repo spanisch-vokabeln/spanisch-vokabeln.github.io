@@ -2,20 +2,21 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { buildWordPool, vocabByGrade } from '../data/vocab';
 import { bilderquizThemes } from '../data/bilderquiz';
 import FloatingBack from './FloatingBack';
+import { storageGet, storageSet } from '../utils/storage';
 
 // ─── Games Hub Menu ──────────────────────────────────────────────────────────
 export default function GamesHub({ selectedGrades, onBack }) {
   const [game, setGame] = useState(null);
   const [scores, setScores] = useState(() => ({
-    survival:  Number(localStorage.getItem('gm_survival')  || 0),
-    timeattack: Number(localStorage.getItem('gm_timeattack') || 0),
-    streak:    Number(localStorage.getItem('gm_streak')    || 0),
-    bilderquiz: Number(localStorage.getItem('gm_bilderquiz') || 0),
+    survival:  Number(storageGet('gm_survival')  || 0),
+    timeattack: Number(storageGet('gm_timeattack') || 0),
+    streak:    Number(storageGet('gm_streak')    || 0),
+    bilderquiz: Number(storageGet('gm_bilderquiz') || 0),
   }));
 
   const saveScore = (type, val) => {
     setScores(s => ({ ...s, [type]: val }));
-    localStorage.setItem(`gm_${type}`, val);
+    storageSet(`gm_${type}`, val);
   };
 
   // No grade selected → play with all grades. Deduplicate identical es/de pairs.
@@ -424,12 +425,12 @@ function BilderquizView({ highscore, onSave, onBack }) {
             <div className="text-xs text-gray-500 dark:text-gray-400">{mezcla.words.length} Wörter gemischt</div>
           </div>
         </div>
-        <span className="text-sky-600 dark:text-sky-400 font-bold text-sm">Rekord: {Number(localStorage.getItem('bq_mezcla') || 0)}</span>
+        <span className="text-sky-600 dark:text-sky-400 font-bold text-sm">Rekord: {Number(storageGet('bq_mezcla') || 0)}</span>
       </button>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {bilderquizThemes.map(t => {
-          const best = Number(localStorage.getItem(`bq_${t.id}`) || 0);
+          const best = Number(storageGet(`bq_${t.id}`) || 0);
           return (
             <button key={t.id} onClick={() => setTheme(t)}
               className="p-4 rounded-2xl border border-gray-100 dark:border-gray-700 hover:border-sky-300 hover:shadow-lg bg-white dark:bg-gray-800 transition-all flex flex-col items-center text-center">
@@ -454,7 +455,7 @@ function BilderquizGame({ theme, highscore, onSave, onExit }) {
   const [round, setRound]     = useState(0);
   const [score, setScore]     = useState(0);
   const [streak, setStreak]   = useState(0);
-  const [best, setBest]       = useState(() => Number(localStorage.getItem(bestKey) || 0));
+  const [best, setBest]       = useState(() => Number(storageGet(bestKey) || 0));
   const [locked, setLocked]   = useState(false);
   const [picked, setPicked]   = useState(null);
   const [mode, setMode]       = useState('img2word');
@@ -493,7 +494,7 @@ function BilderquizGame({ theme, highscore, onSave, onExit }) {
     if (ok) {
       setScore(s => s + 1);
       const ns = streak + 1; setStreak(ns);
-      if (ns > best) { setBest(ns); localStorage.setItem(bestKey, ns); if (ns > highscore) onSave(ns); }
+      if (ns > best) { setBest(ns); storageSet(bestKey, ns); if (ns > highscore) onSave(ns); }
       speak(current.es);
     } else setStreak(0);
     const cur = current;

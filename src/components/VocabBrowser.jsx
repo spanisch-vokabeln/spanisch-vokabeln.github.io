@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { vocabByGrade } from '../data/vocab';
 import { speak, ttsSupported } from '../utils/speech';
-import { getWordStatus } from '../utils/progress';
+import { getProgress, getWordStatus } from '../utils/progress';
 import FeedbackModal from './FeedbackModal';
 import FloatingBack from './FloatingBack';
 import { escapeHtml, openPrintWindow, POPUP_BLOCKED_MSG } from '../utils/printTest';
@@ -19,6 +19,8 @@ export default function VocabBrowser({ selectedGrades, onBack }) {
   const [groupByUnidad, setGroupByUnidad] = useState(false);
   const [reportWord, setReportWord] = useState(null);
   const [printError, setPrintError] = useState(false);
+  // Read the progress once instead of once per word card
+  const progress = useMemo(() => getProgress(), []);
 
   const isAllTab = activeTab === ALL_TAB;
 
@@ -213,6 +215,7 @@ export default function VocabBrowser({ selectedGrades, onBack }) {
               onFlip={() => setFlipped(prev => ({ ...prev, [w.id]: !prev[w.id] }))}
               color={w.color}
               onReport={setReportWord}
+              progress={progress}
             />
           ))}
         </div>
@@ -234,6 +237,7 @@ export default function VocabBrowser({ selectedGrades, onBack }) {
                       onFlip={() => setFlipped(prev => ({ ...prev, [id]: !prev[id] }))}
                       color={topic.color}
                       onReport={setReportWord}
+                      progress={progress}
                     />
                   );
                 })}
@@ -254,9 +258,9 @@ export default function VocabBrowser({ selectedGrades, onBack }) {
   );
 }
 
-function WordCard({ word, showDE, flipped, onFlip, color, onReport }) {
+function WordCard({ word, showDE, flipped, onFlip, color, onReport, progress }) {
   const revealed = showDE || flipped;
-  const status   = getWordStatus(word.es);
+  const status   = getWordStatus(word, progress);
   const dot      = STATUS_COLOR[status];
 
   return (

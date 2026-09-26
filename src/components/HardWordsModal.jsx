@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { vocabByGrade } from '../data/vocab';
-import { getWordStatus } from '../utils/progress';
+import { getProgress, getWordStatus, wordKey } from '../utils/progress';
 
 const STATUS_CONFIG = {
   hard:   { label: 'Schwierig',    color: '#ef4444', bg: 'var(--game-bg-red)',   dot: '#ef4444' },
@@ -11,11 +11,16 @@ const STATUS_CONFIG = {
 export default function HardWordsModal({ selectedGrades, onClose }) {
   const words = useMemo(() => {
     const grades = selectedGrades.length > 0 ? selectedGrades : Object.keys(vocabByGrade);
-    const all = grades.flatMap(g =>
-      vocabByGrade[g].topics.flatMap(t => t.words)
-    );
-    const hard   = all.filter(w => getWordStatus(w.es) === 'hard');
-    const medium = all.filter(w => getWordStatus(w.es) === 'medium');
+    const progress = getProgress();
+    const seen = new Set();
+    // Same word in several topics/grades → show it once
+    const all = grades.flatMap(g => vocabByGrade[g].topics.flatMap(t => t.words)).filter(w => {
+      const k = wordKey(w);
+      if (seen.has(k)) return false;
+      seen.add(k); return true;
+    });
+    const hard   = all.filter(w => getWordStatus(w, progress) === 'hard');
+    const medium = all.filter(w => getWordStatus(w, progress) === 'medium');
     return { hard, medium };
   }, [selectedGrades]);
 
@@ -71,8 +76,8 @@ export default function HardWordsModal({ selectedGrades, onClose }) {
                   </h3>
                 </div>
                 <div className="grid grid-cols-1 gap-1.5">
-                  {list.map((w, i) => (
-                    <div key={i}
+                  {list.map(w => (
+                    <div key={wordKey(w)}
                       className="flex items-center justify-between rounded-xl px-3 py-2.5 border border-gray-100 dark:border-gray-800"
                       style={{ background: cfg.bg }}>
                       <span className="font-bold text-sm text-gray-800 dark:text-gray-100">{w.es}</span>

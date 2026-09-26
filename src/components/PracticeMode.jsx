@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import FloatingBack from './FloatingBack';
 import { vocabByGrade } from '../data/vocab';
 import { compareAnswers, hintMessage } from '../utils/textComparison';
-import { recordWord, sortByDifficulty, getMistakes, setMistakes } from '../utils/progress';
+import { recordWord, sortByDifficulty, getMistakes, addMistakes, removeMistakes, trackMistake } from '../utils/progress';
 import { speak, ttsSupported } from '../utils/speech';
 import { pickDistractors } from '../utils/distractors';
 import { AnswerInput, AccentKeys } from './AnswerInput';
@@ -57,13 +57,18 @@ export default function PracticeMode({ selectedGrades, onBack }) {
   const savedMistakes = getMistakes();
   const activeWords   = mistakeMode ? savedMistakes : filteredWords;
 
+  // List emptied (all Fehlerwörter answered correctly) → back to normal mode
+  useEffect(() => {
+    if (mistakeMode && savedMistakes.length === 0) setMistakeMode(false);
+  }, [mistakeMode, savedMistakes.length]);
+
   const toggleTopic = (key) =>
     setSelectedTopics(prev => { const s = new Set(prev); s.has(key) ? s.delete(key) : s.add(key); return s; });
 
-  if (mode === 'flashcard') return <FlashcardMode words={activeWords} onBack={() => setMode(null)} />;
-  if (mode === 'choice')    return <MultipleChoiceMode words={activeWords} onBack={() => setMode(null)} />;
-  if (mode === 'typing')    return <TypingMode words={activeWords} onBack={() => setMode(null)} />;
-  if (mode === 'matching')  return <MatchingMode words={activeWords} onBack={() => setMode(null)} />;
+  if (mode === 'flashcard') return <FlashcardMode words={activeWords} fromMistakes={mistakeMode} onBack={() => setMode(null)} />;
+  if (mode === 'choice')    return <MultipleChoiceMode words={activeWords} fromMistakes={mistakeMode} onBack={() => setMode(null)} />;
+  if (mode === 'typing')    return <TypingMode words={activeWords} fromMistakes={mistakeMode} onBack={() => setMode(null)} />;
+  if (mode === 'matching')  return <MatchingMode words={activeWords} fromMistakes={mistakeMode} onBack={() => setMode(null)} />;
 
   const canStart  = activeWords.length >= 1;
   const canChoice = activeWords.length >= 4;
@@ -120,7 +125,7 @@ export default function PracticeMode({ selectedGrades, onBack }) {
           <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center text-xl flex-shrink-0">🔁</div>
           <div className="flex-1">
             <div className="font-bold text-gray-800 dark:text-gray-100 text-sm">Fehlerwörter üben</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">{savedMistakes.length} Wörter aus letzter Session</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">{savedMistakes.length === 1 ? '1 gespeichertes Wort' : `${savedMistakes.length} gespeicherte Wörter`} · richtig beantwortete werden entfernt</div>
           </div>
           {mistakeMode
             ? <span className="text-xs font-bold text-rose-600 bg-rose-100 px-2 py-1 rounded-lg">Aktiv ✓</span>
@@ -169,7 +174,7 @@ function ModeCard({ icon, title, desc, color, onClick, disabled }) {
 }
 
 // ─── Flashcard Mode ──────────────────────────────────────────────────────────
-function FlashcardMode({ words, onBack }) {
+function FlashcardMode({ words, fromMistakes, onBack }) {
   const [direction, setDirection] = useState('es2de');
   const [deck, setDeck] = useState(() => sortByDifficulty(words));
   const [idx, setIdx]     = useState(0);
@@ -184,9 +189,9 @@ function FlashcardMode({ words, onBack }) {
 
   const handleAnswer = (known) => {
     if (!card) return;
-    recordWord(card.es, known);
+    recordWord(card, known);
+    trackMistake(card, known, fromMistakes);
     if (!known) mistakesRef.current.push(card);
-    if (idx + 1 >= total) setMistakes(mistakesRef.current);
     setRevealed(false);
     setIdx(i => i + 1);
   };
@@ -285,7 +290,7 @@ function FlashcardMode({ words, onBack }) {
 const DIR_LABELS = { es2de: 'ES → DE', de2es: 'DE → ES', mixed: 'Gemischt' };
 
 // ─── Multiple Choice Mode ────────────────────────────────────────────────────
-function MultipleChoiceMode({ words, onBack }) {
+function MultipleChoiceMode({ words, fromMistakes, onBack }) {
   const [deck, setDeck] = useState([]);
   const [started, setStarted] = useState(false);
   const [idx, setIdx] = useState(0);
@@ -315,7 +320,6 @@ function MultipleChoiceMode({ words, onBack }) {
 
   const advance = (nextIdx) => {
     timer.clear();
-    if (nextIdx >= total) setMistakes(mistakesRef.current);
     setFb(null);
     setIdx(nextIdx);
   };
@@ -326,7 +330,8 @@ function MultipleChoiceMode({ words, onBack }) {
     const isCorrect = opt === correct;
     if (isCorrect) setScore(s => s + 1);
     else mistakesRef.current.push(card);
-    recordWord(card.es, isCorrect);
+    recordWord(card, isCorrect);
+    trackMistake(card, isCorrect, fromMistakes);
     setFb({ picked: opt, correct, isCorrect });
     if (isCorrect) timer.set(() => advance(idx + 1), 1000);
   };
@@ -433,7 +438,7 @@ function MultipleChoiceMode({ words, onBack }) {
 }
 
 // ─── Typing Mode ─────────────────────────────────────────────────────────────
-function TypingMode({ words, onBack }) {
+function TypingMode({ words, fromMistakes, onBack }) {
   const [deck, setDeck] = useState([]);
   const [started, setStarted] = useState(false);
   const [idx, setIdx]     = useState(0);
@@ -461,7 +466,6 @@ function TypingMode({ words, onBack }) {
 
   const advance = (nextIdx) => {
     timer.clear();
-    if (nextIdx >= total) setMistakes(mistakesRef.current);
     setFb(null);
     setInput('');
     setIdx(nextIdx);
@@ -473,7 +477,8 @@ function TypingMode({ words, onBack }) {
     const result  = compareAnswers(input, correct);
     if (result.isCorrect) setScore(s => s + 1);
     else mistakesRef.current.push(card);
-    recordWord(card.es, result.isCorrect);
+    recordWord(card, result.isCorrect);
+    trackMistake(card, result.isCorrect, fromMistakes);
     setFb({ ...result, correct });
     if (result.isCorrect && !result.hint) {
       timer.set(() => advance(idx + 1), 1200);
@@ -625,7 +630,7 @@ function roundCards(roundWords) {
   ]));
 }
 
-function MatchingMode({ words, onBack }) {
+function MatchingMode({ words, fromMistakes, onBack }) {
   const [rounds, setRounds] = useState(() => buildRounds(words));
   const [round, setRound]   = useState(0);
   const [cards, setCards]   = useState(() => roundCards(rounds[0] ?? []));
@@ -633,7 +638,6 @@ function MatchingMode({ words, onBack }) {
   const [disabled, setDis]  = useState(false);
   const [mistakes, setMistakesState] = useState(0);
   const wrongRef    = useRef(new Set());   // Wort-IDs, die mind. einmal falsch zugeordnet wurden
-  const mistakesRef = useRef([]);
   const timersRef   = useRef([]);
 
   const totalRounds = rounds.length;
@@ -648,7 +652,6 @@ function MatchingMode({ words, onBack }) {
     clearTimers();
     const r = buildRounds(words);
     wrongRef.current = new Set();
-    mistakesRef.current = [];
     setRounds(r);
     setRound(0);
     setCards(roundCards(r[0] ?? []));
@@ -682,14 +685,13 @@ function MatchingMode({ words, onBack }) {
     if (p1.key === p2.key) {
       const word = wordById(p1.key);
       const wasWrong = wrongRef.current.has(word.id);
-      recordWord(word.es, !wasWrong);
-      if (wasWrong) mistakesRef.current.push({ es: word.es, de: word.de });
+      recordWord(word, !wasWrong);
+      if (!wasWrong && fromMistakes) removeMistakes([word]);
       const nextCards = cards.map(c => (c.id === p1.id || c.id === p2.id) ? { ...c, state: 'matched' } : c);
       setCards(nextCards);
       if (nextCards.every(c => c.state === 'matched')) {
         setDis(true);
         const nextR = round + 1;
-        if (nextR >= totalRounds) setMistakes(mistakesRef.current);
         later(() => {
           setRound(nextR);
           if (nextR < totalRounds) setCards(roundCards(rounds[nextR]));
@@ -701,6 +703,8 @@ function MatchingMode({ words, onBack }) {
       setMistakesState(m => m + 1);
       wrongRef.current.add(p1.key);
       wrongRef.current.add(p2.key);
+      // Save right away so leaving mid-round keeps them
+      addMistakes([wordById(p1.key), wordById(p2.key)]);
       setCards(cs => cs.map(c => (c.id === p1.id || c.id === p2.id) ? { ...c, state: 'incorrect' } : c));
       later(() => {
         setCards(cs => cs.map(c => (c.id === p1.id || c.id === p2.id) ? { ...c, state: 'idle' } : c));
