@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { vocabByGrade, buildWordPool } from '../data/vocab';
+import { vocabByGrade, buildWordPool, formatGradeLabel } from '../data/vocab';
 import { getProgressSummary, downloadProgress } from '../utils/backup';
 import ProgressModal from './ProgressModal';
 import HardWordsModal from './HardWordsModal';
@@ -71,7 +71,7 @@ export default function HomePage({ selectedGrades, onToggleGrade, onSelectAll, o
                       {gradeLabel(g)}
                     </span>
                     <span className={`text-sm font-semibold ${active ? 'text-indigo-700 dark:text-indigo-300' : 'text-gray-500 dark:text-gray-400'}`}>
-                      {count} Wörter · 8 Kursthemen
+                      {count} Wörter · {info.topics.length} Kursthemen
                     </span>
                   </button>
                 );
@@ -111,7 +111,7 @@ export default function HomePage({ selectedGrades, onToggleGrade, onSelectAll, o
 
         {selectedGrades.length > 0 && (
           <div className="text-center text-sm text-indigo-600 font-semibold mt-3">
-            {[...selectedGrades].sort((a, b) => String(a).localeCompare(String(b))).map(g => vocabByGrade[g].label).join(' + ')} · {totalWords} Wörter
+            {formatGradeLabel(selectedGrades)} · {totalWords} Wörter
           </div>
         )}
         {selectedGrades.length === 0 && (

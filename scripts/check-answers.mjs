@@ -2,6 +2,7 @@
 // Run with: npm run check
 import { vocabByGrade } from '../src/data/vocab.js';
 import { compareAnswers, getAcceptedAnswers, normalizeAnswer } from '../src/utils/textComparison.js';
+import { checkAnswer } from '../src/utils/answerCheck.js';
 
 const errors = [];
 const letterCount = (s) => (s.match(/\p{L}/gu) || []).length;
@@ -40,6 +41,30 @@ for (const [grade, { topics }] of Object.entries(vocabByGrade)) {
       }
     }
   }
+}
+
+// Words with several meanings: every meaning must be accepted for the same prompt
+// ("el papel" → Rolle / Papier, "vielleicht" → tal vez / quizá(s)).
+const allWords = Object.values(vocabByGrade).flatMap(g => g.topics.flatMap(t => t.words));
+for (const w of allWords) {
+  for (const other of allWords) {
+    if (other === w) continue;
+    if (other.es === w.es && other.de !== w.de && !checkAnswer(other.de, w, 'es2de').isCorrect)
+      errors.push(`Mehrdeutig: "${w.es}" lehnt "${other.de}" ab`);
+    if (other.de === w.de && other.es !== w.es && !checkAnswer(other.es, w, 'de2es').isCorrect)
+      errors.push(`Mehrdeutig: "${w.de}" lehnt "${other.es}" ab`);
+  }
+}
+const SYNONYMS = [
+  ['das Papier', { es: 'el papel', de: 'die Rolle' }, 'es2de', true],
+  ['quizás', { es: 'tal vez', de: 'vielleicht' }, 'de2es', true],
+  ['bueno', { es: 'bien', de: 'gut (Adverb)' }, 'de2es', false],
+  ['bien', { es: 'bien', de: 'gut (Adverb)' }, 'de2es', true],
+  ['gut', { es: 'bien', de: 'gut (Adverb)' }, 'es2de', true],
+];
+for (const [input, word, dir, expected] of SYNONYMS) {
+  if (checkAnswer(input, word, dir).isCorrect !== expected)
+    errors.push(`Synonym: "${input}" für "${dir === 'es2de' ? word.es : word.de}" sollte ${expected ? 'richtig' : 'falsch'} sein`);
 }
 
 // Expected results from bugs.md (Block 1).

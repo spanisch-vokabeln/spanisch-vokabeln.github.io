@@ -1,6 +1,7 @@
 export const vocabByGrade = {
   7: {
     label: 'Klasse 7',
+    short: 'Kl. 7',
     color: '#6366f1',
     topics: [
       // ── INTRODUCCIÓN ─────────────────────────────────────────────────────────
@@ -11,7 +12,7 @@ export const vocabByGrade = {
           { es: '¡Hola!', de: 'Hallo!' },
           { es: '¡Buenos días!', de: 'Guten Morgen! / Guten Tag!' },
           { es: '¿Qué tal?', de: 'Wie geht\'s?' },
-          { es: 'bien', de: 'gut' },
+          { es: 'bien', de: 'gut (Adverb)' },
           { es: 'Gracias.', de: 'Danke.' },
           { es: 'y', de: 'und' },
           { es: '¿Y tú?', de: 'Und du?' },
@@ -134,8 +135,8 @@ export const vocabByGrade = {
         words: [
           { es: 'Mira.', de: 'Schau mal.' },
           { es: 'mirar', de: 'anschauen / schauen / ansehen / sehen' },
-          { es: 'Este es...', de: 'Das ist' },
-          { es: 'Esta es...', de: 'Das ist' },
+          { es: 'Este es...', de: 'Das ist (bei einem Jungen / Mann)' },
+          { es: 'Esta es...', de: 'Das ist (bei einem Mädchen / einer Frau)' },
           { es: 'el chico', de: 'der Junge' },
           { es: 'la chica', de: 'das Mädchen' },
           { es: '¡Adelante!', de: 'Herein! / Vorwärts!' },
@@ -237,8 +238,8 @@ export const vocabByGrade = {
           { es: 'el bocadillo', de: 'das belegte Brötchen' },
           { es: 'beber algo', de: 'etwas trinken' },
           { es: 'algo', de: 'etwas' },
-          { es: 'antes de', de: 'vor' },
-          { es: 'bueno, -a', de: 'gut' },
+          { es: 'antes de', de: 'vor (zeitlich)' },
+          { es: 'bueno, -a', de: 'gut (Adjektiv)' },
           { es: 'llamar', de: 'anrufen' },
           { es: 'la habitación', de: 'das Zimmer' },
           { es: 'el desastre', de: 'die Katastrophe' },
@@ -256,7 +257,7 @@ export const vocabByGrade = {
         unidad: 'Unidad 2',
         words: [
           { es: 'al lado de', de: 'neben' },
-          { es: 'delante de', de: 'vor' },
+          { es: 'delante de', de: 'vor (örtlich)' },
           { es: 'detrás de', de: 'hinter' },
           { es: 'entre', de: 'zwischen' },
           { es: 'cerca de', de: 'in der Nähe von' },
@@ -647,6 +648,7 @@ export const vocabByGrade = {
 
   8: {
     label: 'Klasse 8',
+    short: 'Kl. 8',
     color: '#8b5cf6',
     topics: [
       // ── UNIDAD 1 ─────────────────────────────────────────────────────────────
@@ -1209,6 +1211,7 @@ export const vocabByGrade = {
 
   9: {
     label: 'Klasse 9',
+    short: 'Kl. 9',
     color: '#ec4899',
     topics: [
       // ── UNIDAD 1 ─────────────────────────────────────────────────────────────
@@ -1824,6 +1827,7 @@ export const vocabByGrade = {
 
   10: {
     label: 'Klasse 10',
+    short: 'Kl. 10',
     color: '#14b8a6',
     topics: [
       // ── UNIDAD 1 ─────────────────────────────────────────────────────────────
@@ -2412,6 +2416,7 @@ export const vocabByGrade = {
 
   'ks': {
     label: 'Kursstufe (11/12)',
+    short: 'Kursstufe',
     color: '#f97316',
     topics: [
       // ── KURSTHEMA 1: La vida de los jóvenes ──────────────────────────────────
@@ -2645,7 +2650,7 @@ export const vocabByGrade = {
           { es: 'la contaminación', de: 'die Umweltverschmutzung' },
           { es: 'la biodiversidad', de: 'die Artenvielfalt' },
           { es: 'el conflicto armado', de: 'der bewaffnete Konflikt' },
-          { es: 'el / la refugiado/-a', de: 'der / die Flüchtling/-in' },
+          { es: 'el / la refugiado/-a', de: 'der Flüchtling' },
           { es: 'la crisis humanitaria', de: 'die humanitäre Krise' },
           { es: 'la pobreza global', de: 'die weltweite Armut' },
           { es: 'el hambre', de: 'der Hunger' },
@@ -2667,7 +2672,8 @@ export const vocabByGrade = {
   // ── NUEVA EDICIÓN ─────────────────────────────────────────────────────────
 
   '7n': {
-    label: 'Klasse 7',
+    label: 'Klasse 7 (Nueva Edición)',
+    short: 'Kl. 7 NE',
     series: 'neu',
     color: '#0ea5e9',
     topics: [
@@ -2850,7 +2856,7 @@ export const vocabByGrade = {
           { es: 'el momento', de: 'der Moment' },
           { es: 'ahora', de: 'jetzt' },
           { es: 'Entiendo.', de: 'Ich verstehe.' },
-          { es: '¿Verdad?', de: '…nicht wahr?' },
+          { es: '¿Verdad?', de: 'nicht wahr?' },
           { es: 'para mí', de: 'für mich' },
           { es: '¡Qué…!', de: 'Was für…!' },
           { es: 'la sorpresa', de: 'die Überraschung' },
@@ -2920,7 +2926,7 @@ export const vocabByGrade = {
           { es: 'la calle', de: 'die Straße' },
           { es: 'encima de', de: 'auf' },
           { es: 'debajo de', de: 'unter' },
-          { es: 'delante de', de: 'vor' },
+          { es: 'delante de', de: 'vor (örtlich)' },
           { es: 'detrás de', de: 'hinter' },
           { es: 'cerca de', de: 'in der Nähe von' },
           { es: 'lejos de', de: 'weit entfernt von' },
@@ -3249,12 +3255,12 @@ export const vocabByGrade = {
           { es: 'pequeño, -a', de: 'klein' },
           { es: 'por eso', de: 'deswegen; deshalb' },
           { es: 'de segunda mano', de: 'gebraucht; second hand' },
-          { es: 'bueno, -a', de: 'gut' },
+          { es: 'bueno, -a', de: 'gut (Adjektiv)' },
           { es: 'interesante', de: 'interessant' },
           { es: 'aburrido, -a', de: 'langweilig' },
           { es: 'comentar algo', de: 'etw. meinen; etw. erwidern' },
           { es: 'Es verdad.', de: 'Das ist wahr.' },
-          { es: '¿Verdad?', de: 'Nicht wahr?' },
+          { es: '¿Verdad?', de: 'nicht wahr?' },
           { es: 'contestar (algo)', de: 'antworten; etw. beantworten' },
           { es: 'el medio ambiente', de: 'die Umwelt' },
           { es: 'la industria', de: 'die Industrie' },
@@ -3334,12 +3340,41 @@ export const vocabByGrade = {
 };
 
 // Returns a flat array of all words for the given grades, each tagged with grade info
+// Display order of the grades (same as on the home page)
+export const GRADE_ORDER = [7, 8, 9, 10, '7n', 'ks'];
+
+export const sortGrades = (grades) =>
+  [...grades].sort((a, b) => GRADE_ORDER.indexOf(a) - GRADE_ORDER.indexOf(b));
+
+// „Klasse 7“, „Klasse 7 + 8“, „Klasse 7 + 7 (Nueva Edición)“, „Klasse 9 + Kursstufe (11/12)“ …
+export function formatGradeLabel(grades) {
+  let seenKlasse = false;
+  return sortGrades(grades).map(g => {
+    const l = vocabByGrade[g]?.label ?? `Klasse ${g}`;
+    if (!l.startsWith('Klasse ')) return l;
+    if (!seenKlasse) { seenKlasse = true; return l; }
+    return l.slice('Klasse '.length);
+  }).join(' + ');
+}
+
+// Some words appear in several unidades on purpose (the book repeats them) or in
+// several grades. Word lists for practice, tests and games contain each pair once.
+export function uniqueWords(words) {
+  const seen = new Set();
+  return words.filter(w => {
+    const k = `${w.es}|${w.de}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
 export function buildWordPool(grades) {
-  return grades.flatMap(g => {
+  return uniqueWords(grades.flatMap(g => {
     const grade = vocabByGrade[g];
     if (!grade) return [];
     return grade.topics.flatMap(t =>
       t.words.map(w => ({ ...w, grade: g, topic: t.name }))
     );
-  });
+  }));
 }

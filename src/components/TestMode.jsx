@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import FloatingBack from './FloatingBack';
-import { vocabByGrade } from '../data/vocab';
+import { vocabByGrade, uniqueWords } from '../data/vocab';
 import { GRADE_SCALE, getGradeForPoints } from '../utils/grading';
-import { compareAnswers, hintMessage } from '../utils/textComparison';
+import { hintMessage } from '../utils/textComparison';
+import { checkAnswer } from '../utils/answerCheck';
 import { recordWord, addMistakes } from '../utils/progress';
 import { speak, ttsSupported } from '../utils/speech';
 import { generatePrintTest, formatGradeLabel, openPrintWindow, POPUP_BLOCKED_MSG } from '../utils/printTest';
@@ -28,7 +29,7 @@ export default function TestMode({ selectedGrades, onBack }) {
     selectedGrades.flatMap(g =>
       vocabByGrade[g].topics.map(t => ({
         key: `${g}::${t.name}`,
-        label: selectedGrades.length > 1 ? `${vocabByGrade[g].label}: ${t.name}` : t.name,
+        label: selectedGrades.length > 1 ? `${vocabByGrade[g].short}: ${t.name}` : t.name,
         words: t.words.map(w => ({ ...w, cat: t.name, grade: g })),
       }))
     ), [selectedGrades]);
@@ -36,7 +37,7 @@ export default function TestMode({ selectedGrades, onBack }) {
   const [selectedTopics, setSelectedTopics] = useState(() => new Set(allTopics.map(t => t.key)));
 
   const allWords = useMemo(() =>
-    allTopics.filter(t => selectedTopics.has(t.key)).flatMap(t => t.words),
+    uniqueWords(allTopics.filter(t => selectedTopics.has(t.key)).flatMap(t => t.words)),
     [allTopics, selectedTopics]);
 
   const maxWords = allWords.length;
@@ -240,8 +241,7 @@ function TestExam({ words, examMode, onFinish, onCancel }) {
 
   const submit = () => {
     if (!input.trim()) return;
-    const correct = word.dir === 'es2de' ? word.de : word.es;
-    const fb = { ...compareAnswers(input, correct), correct, userInput: input };
+    const fb = { ...checkAnswer(input, word, word.dir), userInput: input };
     // Exam mode: no feedback until the result page
     if (examMode) { goNext(record(fb)); return; }
     setFb(fb);
@@ -321,7 +321,7 @@ function TestExam({ words, examMode, onFinish, onCancel }) {
                 : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
             }`}>
               {feedback.isCorrect
-                ? feedback.hint ? `Richtig! (${hintMessage(feedback.hint)}: ${feedback.correct})` : '¡Correcto! ✓'
+                ? feedback.hint ? `Richtig! (${hintMessage(feedback.hint)}: ${feedback.correct})` : feedback.correct !== feedback.expected ? `¡Correcto! ✓ Auch richtig: ${feedback.expected}` : '¡Correcto! ✓'
                 : `Falsch. Richtig: „${feedback.correct}"`}
             </div>
             {(!feedback.isCorrect || feedback.hint) && (

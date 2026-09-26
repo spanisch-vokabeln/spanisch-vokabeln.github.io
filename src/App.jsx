@@ -6,8 +6,7 @@ import TestMode     from './components/TestMode';
 import GamesHub     from './components/GamesHub';
 import FeedbackModal from './components/FeedbackModal';
 import { useDark } from './utils/darkMode.jsx';
-
-const GRADES = [7, 8, 9, 10, '7n', 'ks'];
+import { GRADE_ORDER, sortGrades } from './data/vocab';
 
 export default function App() {
   const [view, setView]                   = useState('home');
@@ -16,9 +15,9 @@ export default function App() {
   const { dark, setDark } = useDark();
 
   const toggleGrade = (g) =>
-    setSelectedGrades(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]);
+    setSelectedGrades(prev => prev.includes(g) ? prev.filter(x => x !== g) : sortGrades([...prev, g]));
 
-  const selectAll  = () => setSelectedGrades([...GRADES]);
+  const selectAll  = () => setSelectedGrades([...GRADE_ORDER]);
   const clearAll   = () => setSelectedGrades([]);
 
   const goTo = (target) => {

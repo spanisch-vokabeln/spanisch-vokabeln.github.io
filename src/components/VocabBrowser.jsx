@@ -28,7 +28,7 @@ export default function VocabBrowser({ selectedGrades, onBack }) {
     ? selectedGrades.flatMap(g =>
         vocabByGrade[g].topics.map(t => ({
           ...t,
-          name: `${vocabByGrade[g].label}: ${t.name}`,
+          name: `${vocabByGrade[g].short}: ${t.name}`,
           color: vocabByGrade[g].color,
           grade: g,
         }))
@@ -171,7 +171,7 @@ export default function VocabBrowser({ selectedGrades, onBack }) {
             }`}
             style={activeTab === g ? { background: vocabByGrade[g].color } : {}}
           >
-            {vocabByGrade[g].label}
+            {vocabByGrade[g].short}
           </button>
         ))}
       </div>

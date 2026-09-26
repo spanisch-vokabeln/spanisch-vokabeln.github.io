@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import FloatingBack from './FloatingBack';
-import { vocabByGrade } from '../data/vocab';
-import { compareAnswers, hintMessage } from '../utils/textComparison';
+import { vocabByGrade, uniqueWords } from '../data/vocab';
+import { hintMessage } from '../utils/textComparison';
+import { checkAnswer } from '../utils/answerCheck';
 import { recordWord, sortByDifficulty, getMistakes, addMistakes, removeMistakes, trackMistake } from '../utils/progress';
 import { speak, ttsSupported } from '../utils/speech';
 import { pickDistractors } from '../utils/distractors';
@@ -41,7 +42,7 @@ export default function PracticeMode({ selectedGrades, onBack }) {
     selectedGrades.flatMap(g =>
       vocabByGrade[g].topics.map(t => ({
         key: `${g}::${t.name}`,
-        label: selectedGrades.length > 1 ? `${vocabByGrade[g].label}: ${t.name}` : t.name,
+        label: selectedGrades.length > 1 ? `${vocabByGrade[g].short}: ${t.name}` : t.name,
         color: vocabByGrade[g].color,
         grade: g,
         words: t.words.map(w => ({ ...w, cat: t.name, grade: g })),
@@ -51,7 +52,7 @@ export default function PracticeMode({ selectedGrades, onBack }) {
   const [selectedTopics, setSelectedTopics] = useState(() => new Set(allTopics.map(t => t.key)));
 
   const filteredWords = useMemo(() =>
-    allTopics.filter(t => selectedTopics.has(t.key)).flatMap(t => t.words),
+    uniqueWords(allTopics.filter(t => selectedTopics.has(t.key)).flatMap(t => t.words)),
     [allTopics, selectedTopics]);
 
   const savedMistakes = getMistakes();
@@ -473,13 +474,12 @@ function TypingMode({ words, fromMistakes, onBack }) {
 
   const submit = () => {
     if (!input.trim()) return;
-    const correct = cardDir === 'es2de' ? card.de : card.es;
-    const result  = compareAnswers(input, correct);
+    const result  = checkAnswer(input, card, cardDir);
     if (result.isCorrect) setScore(s => s + 1);
     else mistakesRef.current.push(card);
     recordWord(card, result.isCorrect);
     trackMistake(card, result.isCorrect, fromMistakes);
-    setFb({ ...result, correct });
+    setFb(result);
     if (result.isCorrect && !result.hint) {
       timer.set(() => advance(idx + 1), 1200);
     }
@@ -584,7 +584,7 @@ function TypingMode({ words, fromMistakes, onBack }) {
               : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
           }`}>
             {feedback.isCorrect
-              ? feedback.hint ? `Richtig! (${hintMessage(feedback.hint)}: ${feedback.correct})` : '¡Correcto!'
+              ? feedback.hint ? `Richtig! (${hintMessage(feedback.hint)}: ${feedback.correct})` : feedback.correct !== feedback.expected ? `¡Correcto! Auch richtig: ${feedback.expected}` : '¡Correcto!'
               : `Falsch. Richtig: ${feedback.correct}`}
           </div>
         )}

@@ -21,7 +21,7 @@ Ergebnis des Audits vom 26.09.2026. Jeder Block ist so geschrieben, dass er **in
 | 4 | Spiele (Arcade & Bilderquiz) | 🟠 Bug | – | ✅ |
 | 5 | Üben- & Test-Ablauf | 🟠 Bug | 1 | ✅ |
 | 6 | Lernstand, Fehlerwörter & Backup | 🟠 Bug | 2 | ✅ |
-| 7 | Vokabeldaten & Klassen-Bezeichnungen | 🟠 Bug | 1 | ⬜ |
+| 7 | Vokabeldaten & Klassen-Bezeichnungen | 🟠 Bug | 1 | ✅ |
 | 8 | CSS, Schrift & Dunkelmodus | 🟠 Bug | – | ⬜ |
 | 9 | Navigation & Bedienbarkeit | 🟡 UX | 5, 8 | ⬜ |
 | 10 | PWA, Aufräumen & Abhängigkeiten | ⚪ Technik | – | ⬜ |
@@ -223,16 +223,16 @@ Wer 94 % hat, sieht im Schlüssel eine 2, bekommt aber eine 1.
 **Datei:** `src/data/vocab.js` (und `src/components/HomePage.jsx` für Labels)
 
 **Aufgaben**
-- [ ] **Klasse 7n** heißt ebenfalls `label: 'Klasse 7'`. Das führt zu „Klasse 7 + Klasse 7“, zwei gleichen Tabs in der Vokabelliste und mehrdeutigen Themen-Namen. Umbenennen, z. B. „Klasse 7 (Nueva Edición)“, mit Kurzform für enge Stellen.
-- [ ] Sortierung der Auswahl-Zusammenfassung in `HomePage.jsx` (~Zeile 114): `localeCompare` sortiert „10“ vor „7“. Nach der Reihenfolge in `GRADE_GROUPS` sortieren.
-- [ ] Doppelte Wörter innerhalb einer Klasse prüfen und bereinigen, **oder** als gewollte Wiederholung markieren. Liste:
+- [x] **Klasse 7n** heißt ebenfalls `label: 'Klasse 7'`. Das führt zu „Klasse 7 + Klasse 7“, zwei gleichen Tabs in der Vokabelliste und mehrdeutigen Themen-Namen. Umbenennen, z. B. „Klasse 7 (Nueva Edición)“, mit Kurzform für enge Stellen.
+- [x] Sortierung der Auswahl-Zusammenfassung in `HomePage.jsx` (~Zeile 114): `localeCompare` sortiert „10“ vor „7“. Nach der Reihenfolge in `GRADE_GROUPS` sortieren.
+- [x] Doppelte Wörter innerhalb einer Klasse prüfen und bereinigen, **oder** als gewollte Wiederholung markieren. Liste:
   - 7: antiguo, -a · el alemán · septiembre
   - 8: los cereales
   - 9: el papel
   - 10: la forma · la fuente
   - ks: la solidaridad · la globalización · el cambio climático · la sostenibilidad · la inteligencia artificial · la automatización
   - 7n: el zapato · la clase · ya no · dibujar algo · normalmente · ¿Verdad?
-- [ ] Mehrdeutige Einträge in Richtung Deutsch → Spanisch (gleiche deutsche Übersetzung für verschiedene spanische Wörter derselben Klasse). Im Test kann man nicht wissen, welches Wort gemeint ist. Unterscheidenden Hinweis ergänzen, z. B. „gut (Adverb)“ / „gut (Adjektiv)“. Liste:
+- [x] Mehrdeutige Einträge in Richtung Deutsch → Spanisch (gleiche deutsche Übersetzung für verschiedene spanische Wörter derselben Klasse). Im Test kann man nicht wissen, welches Wort gemeint ist. Unterscheidenden Hinweis ergänzen, z. B. „gut (Adverb)“ / „gut (Adjektiv)“. Liste:
   - 7: gut → bien / bueno · Das ist → Este es / Esta es · vor → antes de / delante de
   - 9: die Grenze → la frontera / el límite
   - 10: vielleicht → tal vez / quizá(s) · fleißig → estudioso / trabajador · jmdn. vor etw. warnen → alertar / advertir
@@ -240,8 +240,12 @@ Wer 94 % hat, sieht im Schlüssel eine 2, bekommt aber eine 1.
   - 7n: etw. lernen → estudiar / aprender · alt → antiguo / viejo
 
   Alternativ in Block 1 **alle** spanischen Wörter mit gleicher Übersetzung als richtig akzeptieren.
-- [ ] Die Anzahl „8 Kursthemen“ ist in `HomePage.jsx` ~Zeile 74 fest eingetragen. Aus `vocabByGrade.ks.topics.length` berechnen.
-- [ ] Nach Block 1: `npm run check` erneut laufen lassen und Daten-Fehler beheben, die das Skript meldet.
+- [x] Die Anzahl „8 Kursthemen“ ist in `HomePage.jsx` ~Zeile 74 fest eingetragen. Aus `vocabByGrade.ks.topics.length` berechnen.
+- [x] Nach Block 1: `npm run check` erneut laufen lassen und Daten-Fehler beheben, die das Skript meldet.
+
+**Umgesetzt (26.09.2026):** Jede Klasse hat jetzt `label` und `short`: 7n heißt „Klasse 7 (Nueva Edición)“ bzw. kurz „Kl. 7 NE“. Die Kurzform steht in den Tabs der Vokabelliste und vor den Themen-Namen bei mehreren Klassen. `GRADE_ORDER`, `sortGrades()` und `formatGradeLabel()` liegen jetzt in `vocab.js` (`printTest.js` exportiert `formatGradeLabel` weiter). `App.jsx` hält die Klassenauswahl immer sortiert; die Zusammenfassung auf der Startseite nutzt `formatGradeLabel`, z. B. „Klasse 7 + 10 + 7 (Nueva Edición)“. Die Zahl der Kursthemen wird aus den Daten berechnet.
+**Doppelte Wörter:** Gleiche Wörter mit **verschiedener** Bedeutung (el alemán, los cereales, el papel, la forma, la fuente, la clase) sind richtig und bleiben. Exakte Wiederholungen (antiguo, septiembre, die ks-Wörter, el zapato, ya no, dibujar algo, normalmente) gelten als gewollte Wiederholung aus dem Buch und bleiben in ihren Unidades. `uniqueWords()` (auch in `buildWordPool`) sorgt dafür, dass jedes Paar in Üben, Test, Spielen und den Wortzahlen nur einmal vorkommt. `¿Verdad?` in 7n ist vereinheitlicht („nicht wahr?“).
+**Mehrdeutige Einträge:** Nicht austauschbare Wörter bekommen einen Hinweis: „gut (Adverb)“ / „gut (Adjektiv)“, „Das ist (bei einem Jungen / Mann)“ / „(bei einem Mädchen / einer Frau)“, „vor (zeitlich)“ / „vor (örtlich)“. Für echte Synonyme gilt die Alternative aus der Aufgabe: `src/utils/answerCheck.js` (`checkAnswer`) akzeptiert beim Eintippen und im Test **jede** Bedeutung derselben Frage über alle Klassen (vielleicht → tal vez **oder** quizá(s), el papel → Rolle **oder** Papier, el tiempo → Zeit **oder** Wetter) und zeigt „Auch richtig: …“. `npm run check` prüft das jetzt für alle Wörter. Außerdem `der / die Flüchtling/-in` → „der Flüchtling“ (Notiz aus Block 1).
 
 ---
 
@@ -318,15 +322,15 @@ Wer 94 % hat, sieht im Schlüssel eine 2, bekommt aber eine 1.
 
 _(Hier tragen Sitzungen Funde außerhalb ihres Blocks ein.)_
 
-- **Block 1 → Block 7:** Bei „etw. / a alguien“-Einträgen werden jetzt beide Varianten erzeugt („conocer algo“, „conocer a alguien“). Bei deutschen Einträgen wie `der / die Flüchtling/-in` erzeugt die Endungsregel auch „Flüchtlingin“ (harmlos, aber die Daten könnten `Flüchtling` ohne `/-in` schreiben).
+- **Block 1 → Block 7 (erledigt):** Bei „etw. / a alguien“-Einträgen werden jetzt beide Varianten erzeugt („conocer algo“, „conocer a alguien“). Bei deutschen Einträgen wie `der / die Flüchtling/-in` erzeugt die Endungsregel auch „Flüchtlingin“ (harmlos, aber die Daten könnten `Flüchtling` ohne `/-in` schreiben).
 - **Block 1 → Block 8:** `npm run build` zeigt weiterhin die CSS-Warnung „@import must precede all other statements“ (war schon vorher da, gehört zu Block 8).
 - **Block 1 → Block 5:** Der Artikel-Hinweis verhindert wie der Akzent-Hinweis das automatische Weiterspringen (Nutzer muss „Weiter“ tippen). Falls das zu viele Klicks sind, in Block 5 überdenken.
 - **Block 2 → Block 6:** Im Zuordnungs-Modus werden Fehlerwörter wie in den anderen Modi erst am Rundenende gespeichert und die Liste dabei überschrieben (bei 0 Fehlern gelöscht). Das Zusammenführen bzw. Speichern bei Abbruch gehört zu Block 6.
-- **Block 3 → Block 7:** Die Druck-Kopfzeile nutzt jetzt `vocabByGrade[g].label`. Solange 7n ebenfalls „Klasse 7“ heißt, steht bei 7 + 7n dort „Klasse 7 + 7“. Das behebt die Umbenennung in Block 7 automatisch.
+- **Block 3 → Block 7 (erledigt):** Die Druck-Kopfzeile nutzt jetzt `vocabByGrade[g].label`. Solange 7n ebenfalls „Klasse 7“ heißt, steht bei 7 + 7n dort „Klasse 7 + 7“. Das behebt die Umbenennung in Block 7 automatisch.
 - **Block 4 → Block 10:** `GamesHub.jsx` hat jetzt eine eigene Fisher-Yates-Funktion `shuffled()`; beim Zusammenführen in `src/utils/shuffle.js` mitnehmen (ebenso die `shuffle`-Funktion im Bilderquiz).
 - **Block 5 → Block 10:** `pickDistractors` gibt es jetzt zweimal: `src/utils/distractors.js` (Üben) und eine gleichartige Funktion in `GamesHub.jsx` (Block 4). Beim Aufräumen GamesHub auf die Util umstellen.
 - **Block 5 → Block 1-Notiz:** Der Artikel-/Akzent-Hinweis verlangt weiterhin „Weiter“. Bewusst so gelassen, damit man den Hinweis lesen kann; im Prüfungsmodus entfällt der Klick ohnehin.
 - **Block 5 → Block 6:** `sortByDifficulty` in `progress.js` nutzt einen Zufallsanteil im Vergleicher (inkonsistente Sortierung). Besser erst mischen, dann stabil nach Schwierigkeit sortieren.
 - **Block 5 → Block 8:** „TEST“-Badge in `TestExam` hat weiterhin keine Dark-Variante (steht schon in Block 8).
-- **Block 6 → Block 7:** Der Lernstand hängt jetzt am Paar `es|de`. Wer in Block 7 deutsche Übersetzungen ändert (z. B. „gut (Adverb)“), trennt damit den bisherigen Lernstand dieses Wortes ab. Falls das stört: in `migrateProgress()` eine kleine Umbenennungstabelle alt → neu ergänzen und `PROGRESS_VERSION` erhöhen.
+- **Block 6 → Block 7 (bewusst ignoriert, laut Nutzer ist der Lernstand egal):** Der Lernstand hängt jetzt am Paar `es|de`. Wer in Block 7 deutsche Übersetzungen ändert (z. B. „gut (Adverb)“), trennt damit den bisherigen Lernstand dieses Wortes ab. Falls das stört: in `migrateProgress()` eine kleine Umbenennungstabelle alt → neu ergänzen und `PROGRESS_VERSION` erhöhen.
 - **Block 6 → Block 10:** `src/utils/darkMode.js` (tote Datei) greift noch ungeschützt auf `localStorage` zu; wird beim Löschen in Block 10 erledigt.

@@ -1,7 +1,5 @@
 import { getPointRanges } from './grading';
-import { vocabByGrade } from '../data/vocab';
-
-const GRADE_ORDER = [7, 8, 9, 10, '7n', 'ks'];
+export { formatGradeLabel } from '../data/vocab';
 
 export function escapeHtml(value) {
   return String(value ?? '')
@@ -10,18 +8,6 @@ export function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-}
-
-// „Klasse 7“, „Klasse 7 + 8“, „Klasse 9 + Kursstufe (11/12)“ …
-export function formatGradeLabel(grades) {
-  const sorted = [...grades].sort((a, b) => GRADE_ORDER.indexOf(a) - GRADE_ORDER.indexOf(b));
-  const labels = sorted.map(g => vocabByGrade[g]?.label ?? `Klasse ${g}`);
-  let seenKlasse = false;
-  return labels.map(l => {
-    if (!l.startsWith('Klasse ')) return l;
-    if (!seenKlasse) { seenKlasse = true; return l; }
-    return l.slice('Klasse '.length);
-  }).join(' + ');
 }
 
 // Öffnet ein neues Fenster mit `html`. Gibt false zurück, wenn der Browser es blockiert.
