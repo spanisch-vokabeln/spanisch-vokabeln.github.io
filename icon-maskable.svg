@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Full-bleed variant for iOS home screen and Android "maskable" icons:
+       no rounded corners (the OS masks the icon), text inside the 80 % safe zone. -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <rect x="0" y="0" width="512" height="96" fill="#c60b1e" opacity="0.85"/>
+  <rect x="0" y="416" width="512" height="96" fill="#c60b1e" opacity="0.85"/>
+  <rect x="0" y="96" width="512" height="320" fill="#f1bf00" opacity="0.15"/>
+  <text x="256" y="315" font-family="Arial Black, Arial, sans-serif" font-size="200" font-weight="900" text-anchor="middle" fill="white" letter-spacing="-6">ES</text>
+</svg>
