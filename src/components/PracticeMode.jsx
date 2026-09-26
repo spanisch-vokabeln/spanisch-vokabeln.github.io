@@ -575,32 +575,70 @@ function TypingMode({ words, onBack }) {
 }
 
 // ─── Matching Mode ───────────────────────────────────────────────────────────
+const PAIR_COUNT = 5;
+const normKey = (s) => s.trim().toLowerCase();
+
+// Mischt, entfernt Duplikate (es+de) und verteilt die Wörter so auf Runden,
+// dass kein spanischer oder deutscher Text zweimal in derselben Runde steht.
+function buildRounds(words) {
+  const seen = new Set();
+  const unique = shuffle(words).filter(w => {
+    const k = `${w.es}|${w.de}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+  const rounds = [];
+  const open = [];
+  unique.forEach((w, i) => {
+    const word = { ...w, id: i };
+    const es = normKey(w.es), de = normKey(w.de);
+    let r = open.find(r => !r.es.has(es) && !r.de.has(de));
+    if (!r) { r = { words: [], es: new Set(), de: new Set() }; rounds.push(r); open.push(r); }
+    r.words.push(word); r.es.add(es); r.de.add(de);
+    if (r.words.length >= PAIR_COUNT) open.splice(open.indexOf(r), 1);
+  });
+  return rounds.map(r => r.words);
+}
+
+function roundCards(roundWords) {
+  return shuffle(roundWords.flatMap(w => [
+    { id: `es-${w.id}`, text: w.es, lang: 'es', key: w.id, state: 'idle' },
+    { id: `de-${w.id}`, text: w.de, lang: 'de', key: w.id, state: 'idle' },
+  ]));
+}
+
 function MatchingMode({ words, onBack }) {
-  const [allWords]    = useState(() => shuffle(words));
-  const [round, setRound] = useState(0);
-  const [roundMatched, setRoundMatched] = useState(0);
-  const [matchedIds, setMatchedIds] = useState(new Set());
-  const [cards, setCards]  = useState([]);
-  const [selected, setSel] = useState(null);
-  const [disabled, setDis] = useState(false);
+  const [rounds, setRounds] = useState(() => buildRounds(words));
+  const [round, setRound]   = useState(0);
+  const [cards, setCards]   = useState(() => roundCards(rounds[0] ?? []));
+  const [selected, setSel]  = useState(null);
+  const [disabled, setDis]  = useState(false);
   const [mistakes, setMistakesState] = useState(0);
+  const wrongRef    = useRef(new Set());   // Wort-IDs, die mind. einmal falsch zugeordnet wurden
+  const mistakesRef = useRef([]);
+  const timersRef   = useRef([]);
 
-  const PAIR_COUNT  = 5;
-  const totalRounds = Math.ceil(allWords.length / PAIR_COUNT);
+  const totalRounds = rounds.length;
 
-  const loadRound = (r) => {
-    const slice = allWords.slice(r * PAIR_COUNT, r * PAIR_COUNT + PAIR_COUNT);
-    const raw = [];
-    slice.forEach(w => {
-      raw.push({ id: `es-${w.es}`, text: w.es, lang: 'es', key: w.es, state: 'idle' });
-      raw.push({ id: `de-${w.es}`, text: w.de, lang: 'de', key: w.es, state: 'idle' });
-    });
-    setCards(shuffle(raw));
-    setRoundMatched(0);
+  const later = (fn, ms) => { timersRef.current.push(setTimeout(fn, ms)); };
+  const clearTimers = () => { timersRef.current.forEach(clearTimeout); timersRef.current = []; };
+  useEffect(() => clearTimers, []);
+
+  const wordById = (id) => rounds[round].find(w => w.id === id);
+
+  const restart = () => {
+    clearTimers();
+    const r = buildRounds(words);
+    wrongRef.current = new Set();
+    mistakesRef.current = [];
+    setRounds(r);
+    setRound(0);
+    setCards(roundCards(r[0] ?? []));
     setSel(null);
+    setDis(false);
+    setMistakesState(0);
   };
-
-  useEffect(() => { loadRound(0); }, []);
 
   const click = (card) => {
     if (disabled || card.state === 'matched') return;
@@ -622,27 +660,34 @@ function MatchingMode({ words, onBack }) {
         c.id === prev.id ? { ...c, state: 'idle' } : c));
       return;
     }
-    setCards(cs => cs.map(c => c.id === card.id ? { ...c, state: 'selected' } : c));
-    const isMatch = selected.key === card.key;
     const p1 = selected, p2 = card;
-    if (isMatch) {
-      setCards(cs => cs.map(c => (c.id === p1.id || c.id === p2.id) ? { ...c, state: 'matched' } : c));
-      setSel(null);
-      const next = roundMatched + 1;
-      setRoundMatched(next);
-      setMatchedIds(prev => { const s = new Set(prev); s.add(p1.key); return s; });
-      const pairCount = Math.min(PAIR_COUNT, allWords.length - round * PAIR_COUNT);
-      if (next === pairCount) {
+    setSel(null);
+    if (p1.key === p2.key) {
+      const word = wordById(p1.key);
+      const wasWrong = wrongRef.current.has(word.id);
+      recordWord(word.es, !wasWrong);
+      if (wasWrong) mistakesRef.current.push({ es: word.es, de: word.de });
+      const nextCards = cards.map(c => (c.id === p1.id || c.id === p2.id) ? { ...c, state: 'matched' } : c);
+      setCards(nextCards);
+      if (nextCards.every(c => c.state === 'matched')) {
+        setDis(true);
         const nextR = round + 1;
-        setTimeout(() => { setRound(nextR); if (nextR < totalRounds) loadRound(nextR); }, 400);
+        if (nextR >= totalRounds) setMistakes(mistakesRef.current);
+        later(() => {
+          setRound(nextR);
+          if (nextR < totalRounds) setCards(roundCards(rounds[nextR]));
+          setDis(false);
+        }, 400);
       }
     } else {
       setDis(true);
       setMistakesState(m => m + 1);
+      wrongRef.current.add(p1.key);
+      wrongRef.current.add(p2.key);
       setCards(cs => cs.map(c => (c.id === p1.id || c.id === p2.id) ? { ...c, state: 'incorrect' } : c));
-      setTimeout(() => {
+      later(() => {
         setCards(cs => cs.map(c => (c.id === p1.id || c.id === p2.id) ? { ...c, state: 'idle' } : c));
-        setSel(null); setDis(false);
+        setDis(false);
       }, 700);
     }
   };
@@ -654,7 +699,7 @@ function MatchingMode({ words, onBack }) {
         <h3 className="text-2xl font-extrabold">Alle Paare gefunden!</h3>
         <p className="text-gray-500">Fehler: {mistakes}</p>
         <div className="flex gap-3 justify-center flex-wrap">
-          <button onClick={() => { setRound(0); setMatchedIds(new Set()); setMistakesState(0); loadRound(0); }} className="btn btn-primary">Nochmal</button>
+          <button onClick={restart} className="btn btn-primary">Nochmal</button>
           <button onClick={onBack} className="btn btn-outline">Zurück</button>
         </div>
       </div>

@@ -16,7 +16,7 @@ Ergebnis des Audits vom 26.09.2026. Jeder Block ist so geschrieben, dass er **in
 | # | Block | Priorität | Abhängig von | Status |
 |---|-------|-----------|--------------|--------|
 | 1 | Antwortprüfung (Eintippen & Test) | 🔴 kritisch | – | ✅ |
-| 2 | Zuordnungs-Modus hängt fest | 🔴 kritisch | – | ⬜ |
+| 2 | Zuordnungs-Modus hängt fest | 🔴 kritisch | – | ✅ |
 | 3 | Notenschlüssel & Druckansichten | 🔴 kritisch | – | ⬜ |
 | 4 | Spiele (Arcade & Bilderquiz) | 🟠 Bug | – | ⬜ |
 | 5 | Üben- & Test-Ablauf | 🟠 Bug | 1 | ⬜ |
@@ -96,13 +96,15 @@ Das passiert häufig:
 - Fehlerwörter können ebenfalls Duplikate enthalten.
 
 **Aufgaben**
-- [ ] Beim Laden der Wortliste deduplizieren (nach `es`+`de`). Zusätzlich eindeutige IDs pro Karte über einen Index vergeben.
-- [ ] Wörter mit **gleicher deutscher Übersetzung** (z. B. „gut“ = bien / bueno) oder gleichem spanischem Text nicht in dieselbe Runde legen. Sonst sieht ein richtiges Paar wie ein Fehler aus.
-- [ ] Runde als beendet erkennen, wenn keine offenen Karten mehr übrig sind, statt einen separaten Zähler zu führen (robuster).
-- [ ] Ungenutzten State `matchedIds` entfernen.
-- [ ] Ergebnisse im Lernstand speichern: `recordWord(es, true/false)` pro Wort aufrufen. Ein Wort gilt als falsch, wenn es mindestens einmal falsch zugeordnet wurde. Am Ende `setMistakes(...)` aufrufen, wie in den anderen Modi.
-- [ ] „Nochmal“ soll neu mischen, statt dieselbe Reihenfolge zu wiederholen.
-- [ ] Schnelles Doppelklicken während der 400-ms-Rundenüberleitung darf nichts kaputt machen.
+- [x] Beim Laden der Wortliste deduplizieren (nach `es`+`de`). Zusätzlich eindeutige IDs pro Karte über einen Index vergeben.
+- [x] Wörter mit **gleicher deutscher Übersetzung** (z. B. „gut“ = bien / bueno) oder gleichem spanischem Text nicht in dieselbe Runde legen. Sonst sieht ein richtiges Paar wie ein Fehler aus.
+- [x] Runde als beendet erkennen, wenn keine offenen Karten mehr übrig sind, statt einen separaten Zähler zu führen (robuster).
+- [x] Ungenutzten State `matchedIds` entfernen.
+- [x] Ergebnisse im Lernstand speichern: `recordWord(es, true/false)` pro Wort aufrufen. Ein Wort gilt als falsch, wenn es mindestens einmal falsch zugeordnet wurde. Am Ende `setMistakes(...)` aufrufen, wie in den anderen Modi.
+- [x] „Nochmal“ soll neu mischen, statt dieselbe Reihenfolge zu wiederholen.
+- [x] Schnelles Doppelklicken während der 400-ms-Rundenüberleitung darf nichts kaputt machen.
+
+**Umgesetzt (26.09.2026):** Die Wortliste wird nach `es`+`de` dedupliziert. Karten-IDs laufen über einen Index. `buildRounds()` verteilt die Wörter so, dass kein spanischer und kein deutscher Text zweimal in einer Runde steht. Eine Runde endet, wenn keine offenen Karten mehr übrig sind. Bei einer falschen Zuordnung zählen **beide** beteiligten Wörter als falsch. `recordWord` läuft beim Treffer, `setMistakes` am Ende. Timer werden beim Verlassen abgebrochen, und während der Überleitung sind Klicks gesperrt. Im Browser getestet: kompletter Durchgang mit 7 + 7n (179 Runden), doppelte Fehlerwörter, „Nochmal“, Klick-Spam und Speichern der Fehler.
 
 **Fertig, wenn**
 - Mit Klasse 7 + 7n ausgewählt lassen sich mehrere komplette Durchgänge ohne Hänger spielen.
@@ -311,3 +313,4 @@ _(Hier tragen Sitzungen Funde außerhalb ihres Blocks ein.)_
 - **Block 1 → Block 7:** Bei „etw. / a alguien“-Einträgen werden jetzt beide Varianten erzeugt („conocer algo“, „conocer a alguien“). Bei deutschen Einträgen wie `der / die Flüchtling/-in` erzeugt die Endungsregel auch „Flüchtlingin“ (harmlos, aber die Daten könnten `Flüchtling` ohne `/-in` schreiben).
 - **Block 1 → Block 8:** `npm run build` zeigt weiterhin die CSS-Warnung „@import must precede all other statements“ (war schon vorher da, gehört zu Block 8).
 - **Block 1 → Block 5:** Der Artikel-Hinweis verhindert wie der Akzent-Hinweis das automatische Weiterspringen (Nutzer muss „Weiter“ tippen). Falls das zu viele Klicks sind, in Block 5 überdenken.
+- **Block 2 → Block 6:** Im Zuordnungs-Modus werden Fehlerwörter wie in den anderen Modi erst am Rundenende gespeichert und die Liste dabei überschrieben (bei 0 Fehlern gelöscht). Das Zusammenführen bzw. Speichern bei Abbruch gehört zu Block 6.
