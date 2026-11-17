@@ -14,6 +14,25 @@
 html, body {
   overflow-x: hidden;
   max-width: 100vw;
+  /* App, not website: no page zoom by double tap or two fingers (only scrolling),
+     no rubber-band/pull-to-refresh, no grey tap flash, no font boosting on rotation. */
+  touch-action: pan-x pan-y;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Notch / home indicator (viewport-fit=cover, installed app) */
+body {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* Buttons behave like app buttons: no text selection or callout on long press */
+button, [role="button"], label, .btn {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 :root {

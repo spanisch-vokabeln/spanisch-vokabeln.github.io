@@ -31,6 +31,7 @@ export default function HardWordsModal({ selectedGrades, onClose }) {
 
   const modal = (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       onClick={onClose}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}

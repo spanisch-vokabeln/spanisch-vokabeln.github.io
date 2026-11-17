@@ -20,7 +20,8 @@ export default function FloatingBack({ onClick }) {
   return (
     <button
       onClick={onClick}
-      className="fixed top-3 left-3 z-50 flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-rose-600 dark:text-rose-400 font-semibold text-sm rounded-xl shadow-lg active:scale-95 transition-all"
+      style={{ top: 'max(0.75rem, env(safe-area-inset-top))', left: 'max(0.75rem, env(safe-area-inset-left))' }}
+      className="fixed z-50 flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-rose-600 dark:text-rose-400 font-semibold text-sm rounded-xl shadow-lg active:scale-95 transition-all"
     >
       ← Zurück
     </button>

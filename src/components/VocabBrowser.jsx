@@ -187,7 +187,7 @@ export default function VocabBrowser({ selectedGrades, onBack }) {
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
         <input type="text" value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Wort suchen (ES oder DE)…"
-          className="w-full pl-9 pr-4 py-2.5 border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 placeholder:text-gray-400 rounded-xl focus:border-indigo-400 focus:outline-none text-sm"
+          className="w-full pl-9 pr-4 py-2.5 border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 placeholder:text-gray-400 rounded-xl focus:border-indigo-400 focus:outline-none text-base"
         />
         {search && (
           <button onClick={() => setSearch('')}
